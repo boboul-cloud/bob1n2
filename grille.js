@@ -83,6 +83,13 @@
     return code.trim();
   }
 
+  /** Le lien envoyé à un joueur : la grille, puis « . » et son nom et numéro (GrilleADistance.lien(_:pour:)). */
+  function morceaux(adresse) {
+    var code = codeDe(adresse);
+    var point = code.indexOf('.');
+    return point < 0 ? { grille: code, invite: '' } : { grille: code.slice(0, point), invite: code.slice(point + 1) };
+  }
+
   // ---- Calculs (Sources/Core/Calcul.swift) ------------------------------------
 
   var SYSTEME_MIN = 3;
@@ -172,7 +179,7 @@
 
   racine.CodeGrille = {
     VERSION: VERSION, SYSTEME_MIN: SYSTEME_MIN, SYSTEME_MAX: SYSTEME_MAX,
-    coder: coder, decoder: decoder, codeDe: codeDe,
+    coder: coder, decoder: decoder, codeDe: codeDe, morceaux: morceaux,
     arrondi: arrondi, combinaisons: combinaisons, nombreDeCombinaisons: nombreDeCombinaisons,
     nomSysteme: nomSysteme, evaluer: evaluer,
     identifiant: identifiant, enPoints: enPoints, enCote: enCote, jour: jour

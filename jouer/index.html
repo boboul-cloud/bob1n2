@@ -115,7 +115,8 @@
   // ---- La grille ----
 
   async function demarrer() {
-    var code = G.codeDe(location.hash);
+    var lien = G.morceaux(location.hash);
+    var code = lien.grille;
     if (!code) return alerte('Ce lien ne contient pas de grille. Demandez au bar le lien de la semaine.');
     try {
       etat.grille = await G.decoder(code);
@@ -134,8 +135,13 @@
     $('titre-jeu').textContent = grille.t || 'Bob 1N2';
     $('sous-titre').textContent = (grille.n || '') + (grille.d ? ' · ' + G.jour(grille.d) : '');
     etat.mise = Math.max(1, Math.round(grille.m) || 1);
-    $('nom').value = lire('bob1n2.nom');
-    $('numero').value = lire('bob1n2.numero');
+    // Le lien reçu par SMS porte le nom et le numéro du joueur ; sinon, ceux de la dernière fois.
+    var invite = null;
+    if (lien.invite) {
+      try { invite = await G.decoder(lien.invite); } catch (e) { invite = null; }
+    }
+    $('nom').value = invite && invite.p ? invite.p : lire('bob1n2.nom');
+    $('numero').value = invite ? (invite.no > 0 ? String(invite.no) : '') : lire('bob1n2.numero');
 
     var conteneur = $('matchs');
     grille.g.forEach(function (groupe) {
