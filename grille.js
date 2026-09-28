@@ -153,6 +153,27 @@
     return { combinaisons: combos.length, coteTotale: coteTotale, gainMaximum: arrondi(coteTotale * mise) };
   }
 
+  // ---- Retour au bar ------------------------------------------------------------
+
+  /** Un SMS déjà adressé : « ?& » passe sur iPhone comme sur Android. */
+  function lienSMS(telephone, texte) {
+    var numero = String(telephone || '').replace(/[^\d+]/g, '');
+    return 'sms:' + numero + '?&body=' + encodeURIComponent(texte);
+  }
+
+  /** WhatsApp veut le numéro international sans « + » : un 06… est pris pour un numéro français. */
+  function numeroWhatsApp(telephone) {
+    var numero = String(telephone || '').replace(/[^\d+]/g, '');
+    if (numero.charAt(0) === '+') return numero.slice(1).replace(/\D/g, '');
+    if (numero.slice(0, 2) === '00') return numero.slice(2);
+    if (/^0\d{9}$/.test(numero)) return '33' + numero.slice(1);
+    return numero;
+  }
+
+  function lienWhatsApp(telephone, texte) {
+    return 'https://wa.me/' + numeroWhatsApp(telephone) + '?text=' + encodeURIComponent(texte);
+  }
+
   // ---- Divers -----------------------------------------------------------------
 
   /** Sans 0, O, 1 ni l, comme les références de l'app. */
@@ -182,6 +203,7 @@
     coder: coder, decoder: decoder, codeDe: codeDe, morceaux: morceaux,
     arrondi: arrondi, combinaisons: combinaisons, nombreDeCombinaisons: nombreDeCombinaisons,
     nomSysteme: nomSysteme, evaluer: evaluer,
+    lienSMS: lienSMS, numeroWhatsApp: numeroWhatsApp, lienWhatsApp: lienWhatsApp,
     identifiant: identifiant, enPoints: enPoints, enCote: enCote, jour: jour
   };
 })(typeof window !== 'undefined' ? window : globalThis);

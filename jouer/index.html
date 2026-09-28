@@ -74,10 +74,11 @@
   <div class="dialogue">
     <h2>Votre grille est prête</h2>
     <p id="d-resume"></p>
-    <p>Envoyez ce lien au bar, par SMS ou WhatsApp par exemple. Votre pari compte quand le barman l'a
-    validé, aux cotes du moment.</p>
+    <p id="d-consigne"></p>
     <p class="lien-brut" id="d-lien"></p>
     <div class="actions">
+      <a class="bouton" id="d-sms" hidden>Envoyer par SMS au bar</a>
+      <a class="bouton whatsapp" id="d-whatsapp" hidden>Envoyer par WhatsApp</a>
       <button type="button" class="bouton" id="d-partager">Envoyer le lien…</button>
       <button type="button" class="bouton second" id="d-copier">Copier le lien</button>
       <button type="button" class="bouton second" id="d-fermer">Modifier ma grille</button>
@@ -327,6 +328,20 @@
     var formule = tailles ? G.nomSysteme(n, tailles) + ' · ' + combinaisons + ' combinaisons' : (n > 1 ? 'Combiné · ' + n + ' matchs' : 'Simple · 1 match');
     $('d-resume').textContent = nom + ' · ' + grille.n + ' · ' + formule + ' · mise totale ' + G.enPoints(G.arrondi(etat.mise * combinaisons)) + '.';
     $('d-lien').textContent = etat.lien;
+    // Le numéro du bar est dans la grille : le message de retour lui est déjà adressé.
+    var texte = 'Ma grille pour ' + grille.n + ' (' + nom + ') :\n' + etat.lien;
+    var auBar = typeof grille.tel === 'string' && /\d{6}/.test(grille.tel.replace(/\D/g, ''));
+    $('d-sms').hidden = !auBar;
+    $('d-whatsapp').hidden = !auBar;
+    if (auBar) {
+      $('d-sms').href = G.lienSMS(grille.tel, texte);
+      $('d-whatsapp').href = G.lienWhatsApp(grille.tel, texte);
+    }
+    $('d-consigne').textContent = auBar
+      ? 'Touchez « Envoyer par SMS » ou « par WhatsApp » : le message au bar est prêt, il ne reste qu\'à l\'envoyer. Votre pari compte quand le barman l\'a validé, aux cotes du moment.'
+      : 'Envoyez ce lien au bar, par SMS ou WhatsApp par exemple. Votre pari compte quand le barman l\'a validé, aux cotes du moment.';
+    $('d-partager').textContent = auBar ? 'Autre moyen…' : 'Envoyer le lien…';
+    $('d-partager').className = auBar ? 'bouton second' : 'bouton';
     $('d-partager').hidden = !navigator.share;
     $('d-copier').textContent = 'Copier le lien';
     $('dialogue').showModal();
