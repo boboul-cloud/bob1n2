@@ -23,7 +23,7 @@
   </div>
 </header>
 <main class="dedans">
-  <p class="date">Dernière mise à jour : 27 septembre 2026 · Version 1.0 (navigateur intégré)</p>
+  <p class="date">Dernière mise à jour : 28 septembre 2026 · Version 1.0 (jeu à distance)</p>
 
   <div class="encadre">
     <h3>En une phrase</h3>
@@ -43,7 +43,8 @@
     <li>Aucune publicité, aucune régie publicitaire, aucun identifiant publicitaire (IDFA)</li>
     <li>Aucun outil de mesure d'audience ou d'analyse de comportement</li>
     <li>Aucun accès à la position, aux contacts, aux photos, au calendrier, au micro ou à l'appareil photo</li>
-    <li>Aucun envoi : l'application ne transmet vos données à personne, et nous n'avons aucun serveur</li>
+    <li>Aucun envoi : l'application ne transmet vos données à personne (seuls partent les documents et
+    les liens que vous partagez vous-même), et nous n'avons aucun serveur</li>
     <li>Aucun partage avec un tiers, puisque rien n'est collecté</li>
   </ul>
 
@@ -57,6 +58,8 @@
     <td>Tenir le compte de chacun et établir le classement</td></tr>
     <tr><td>Les journées : matchs, cotes, résultats ; les paris de chaque joueur</td><td>Calculer les
     gains et les verser</td></tr>
+    <tr><td>Les grilles reçues à distance : le nom et le numéro tapés par le joueur, ses pronostics et
+    sa mise</td><td>Les valider, et reconnaître une grille reçue deux fois</td></tr>
     <tr><td>Les championnats : nom, adresse de leur page de résultats, classements collés ; le palmarès
     des concours</td><td>Les afficher, proposer les cotes, les retrouver d'un lancement à l'autre</td></tr>
     <tr><td>Les réglages : titre du jeu, points de départ, points par consommation, marge des cotes,
@@ -85,6 +88,18 @@
   le site ». Ce qu'elle retient (noms d'équipes, scores, rangs) reste sur l'appareil. Elle ne va chercher
   aucune page d'elle-même. De même, ce que vous collez
   est lu sur l'appareil et n'est envoyé nulle part.</p>
+
+  <h2>Le jeu à distance</h2>
+  <p>Pour faire jouer à distance, l'application fabrique un lien vers une page de ce site : la grille
+  (titre de la journée, matchs, cotes) est écrite dans la partie du lien qui suit le signe « # », que les
+  navigateurs n'envoient jamais au site. La page s'affiche sur le téléphone du joueur, qui y tape son
+  nom, s'il le veut son numéro de joueur, et ses pronostics : tout reste dans son navigateur, qui retient
+  seulement son nom et son numéro pour la fois suivante. « Envoyer ma grille » fabrique à son tour un
+  lien, que le joueur envoie lui-même, par le moyen de son choix (SMS, messagerie…). Nous n'avons aucun
+  serveur : ni la grille, ni le nom du joueur, ni ses pronostics ne nous parviennent. GitHub Pages, qui
+  héberge ces pages, voit seulement la visite, comme pour le reste du site.</p>
+  <p>Dans l'application, une grille reçue reste sur votre appareil, dans « Grilles reçues », jusqu'à ce
+  que vous l'effaciez. Le lien partagé relève du service de messagerie par lequel il passe.</p>
 
   <h2>Face ID, Touch ID et code de l'appareil</h2>
   <p>Si vous avez oublié le code barman, l'application peut vous demander de vous identifier comme

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Grille jouée — Bob 1N2</title>
+<meta name="description" content="Une grille jouée à distance, à valider dans Bob 1N2.">
+<link rel="icon" href="../images/icone.png">
+<link rel="apple-touch-icon" href="../images/icone.png">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../grille.css">
+</head>
+<body class="jeu">
+<header class="bandeau">
+  <div class="dedans">
+    <h1><img class="icone" src="../images/icone.png" alt="" width="40" height="40">BOB 1N2</h1>
+    <p class="sous-titre">Grille jouée à distance</p>
+  </div>
+</header>
+
+<main class="dedans">
+  <p id="alerte" class="alerte" hidden></p>
+
+  <div id="grille" hidden>
+    <div class="carte">
+      <h2 id="qui"></h2>
+      <p id="quoi"></p>
+    </div>
+
+    <h2>Barman : validez-la dans Bob 1N2</h2>
+    <div class="actions">
+      <a class="bouton" id="ouvrir" href="#">Ouvrir dans Bob 1N2</a>
+      <button type="button" class="bouton second" id="copier">Copier le lien</button>
+    </div>
+    <p class="aide">Si le bouton ne répond pas (sur Mac par exemple) : copiez le lien, puis dans Bob 1N2 ›
+    Grilles reçues, touchez « Coller ». Vous choisirez le joueur et vérifierez la mise avant de valider.</p>
+
+    <div class="encadre" style="margin-top: 24px">
+      <h3>Vous êtes le joueur ?</h3>
+      <p>Ce lien est pour le bar : envoyez-le au barman. Votre pari compte dès qu'il l'a validé, aux
+      cotes du moment.</p>
+    </div>
+  </div>
+</main>
+
+<footer class="dedans"><a href="../index.html">Bob 1N2</a> · <a href="../confidentialite.html">Confidentialité</a></footer>
+
+<script src="../grille.js"></script>
+<script>
+(function () {
+  'use strict';
+  var G = window.CodeGrille;
+  function $(id) { return document.getElementById(id); }
+
+  function alerte(texte) {
+    $('alerte').textContent = texte;
+    $('alerte').hidden = false;
+  }
+
+  async function demarrer() {
+    var code = G.codeDe(location.hash);
+    if (!code) return alerte('Ce lien ne contient pas de grille : il a peut-être été coupé. Demandez au joueur de le renvoyer en entier.');
+    var jouee;
+    try {
+      jouee = await G.decoder(code);
+    } catch (e) {
+      if (e.message === 'navigateur') return alerte("Ce navigateur est trop ancien pour lire la grille. Copiez le lien et collez-le dans Bob 1N2 › Grilles reçues.");
+      if (e.message === 'version') return alerte("Cette grille vient d'une version plus récente de la page : rechargez-la, et mettez Bob 1N2 à jour.");
+      return alerte('Ce lien est abîmé ou incomplet. Demandez au joueur de le renvoyer en entier.');
+    }
+    if (!Array.isArray(jouee.c)) {
+      if (Array.isArray(jouee.g)) {
+        location.replace('../jouer/#' + code);
+        return;
+      }
+      return alerte("Ce lien n'est pas une grille jouée.");
+    }
+
+    var n = jouee.c.length;
+    var tailles = jouee.f === 's' ? (jouee.k || []) : null;
+    var combinaisons = G.nombreDeCombinaisons(n, tailles);
+    var formule = tailles ? G.nomSysteme(n, tailles) + ' · ' + combinaisons + ' combinaisons'
+      : (n > 1 ? 'Combiné · ' + n + ' matchs' : 'Simple · 1 match');
+    var mise = tailles ? G.enPoints(jouee.m) + ' par combinaison, ' + G.enPoints(G.arrondi(jouee.m * combinaisons)) + ' en tout'
+      : G.enPoints(jouee.m);
+
+    $('qui').textContent = (jouee.p || 'Sans nom') + (jouee.no ? ' · n° ' + jouee.no : '');
+    $('quoi').textContent = (jouee.n || 'Journée') + ' · ' + formule + ' · mise ' + mise + '.';
+    $('ouvrir').href = 'bob1n2://grille#' + code;
+    $('copier').addEventListener('click', async function () {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        $('copier').textContent = 'Lien copié ✓';
+      } catch (e) {
+        $('copier').textContent = "Copiez l'adresse de la page";
+      }
+    });
+    document.title = 'Grille de ' + (jouee.p || 'joueur') + ' — Bob 1N2';
+    $('grille').hidden = false;
+  }
+
+  // Un autre lien ouvert dans le même onglet : on relit la page.
+  window.addEventListener('hashchange', function () { location.reload(); });
+  demarrer();
+})();
+</script>
+</body>
+</html>

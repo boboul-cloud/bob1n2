@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Jouer la grille — Bob 1N2</title>
+<meta name="description" content="Cochez vos pronostics 1 N 2 et envoyez votre grille au bar.">
+<link rel="icon" href="../images/icone.png">
+<link rel="apple-touch-icon" href="../images/icone.png">
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../grille.css">
+</head>
+<body class="jeu">
+<header class="bandeau">
+  <div class="dedans">
+    <h1><img class="icone" src="../images/icone.png" alt="" width="40" height="40"><span id="titre-jeu">BOB 1N2</span></h1>
+    <p class="sous-titre" id="sous-titre">Jouer la grille</p>
+  </div>
+</header>
+
+<main class="dedans">
+  <p id="alerte" class="alerte" hidden></p>
+
+  <div id="jeu" hidden>
+    <div class="carte">
+      <div class="ligne-champs">
+        <div>
+          <label class="champ" for="nom">Votre prénom et nom</label>
+          <input id="nom" type="text" autocomplete="name" maxlength="60" placeholder="Pierre Dupont">
+        </div>
+        <div>
+          <label class="champ" for="numero">N° de joueur</label>
+          <input id="numero" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="facultatif">
+        </div>
+      </div>
+      <p class="aide">Votre numéro figure sur vos tickets : le barman vous retrouve plus vite.</p>
+    </div>
+
+    <div class="carte">
+      <div class="segments" role="group" aria-label="Formule">
+        <button type="button" id="f-combine" aria-pressed="true">Combiné</button>
+        <button type="button" id="f-systeme" aria-pressed="false">Système</button>
+      </div>
+      <p class="aide" id="aide-formule"></p>
+      <div id="niveaux" class="niveaux" hidden></div>
+    </div>
+
+    <div id="matchs"></div>
+
+    <p class="aide centre">Points virtuels : aucun argent n'est misé ni gagné.<br>
+    Votre pari compte dès que le barman l'a validé.</p>
+  </div>
+</main>
+
+<div class="recap" id="recap" hidden>
+  <div class="dedans">
+    <div class="recap-haut"><span><span id="r-matchs"></span> · <span id="r-cote"></span></span><span id="r-total"></span></div>
+    <div class="mise">
+      <label for="mise" id="l-mise">Mise</label>
+      <button type="button" id="moins" aria-label="Un point de moins">−</button>
+      <input id="mise" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5">
+      <button type="button" id="plus" aria-label="Un point de plus">+</button>
+    </div>
+    <div class="recap-bas">
+      <div class="gains"><small>GAINS POTENTIELS</small><strong id="r-gains"></strong></div>
+      <button type="button" class="bouton" id="envoyer">Envoyer ma grille</button>
+    </div>
+    <p class="erreur" id="r-erreur" hidden></p>
+  </div>
+</div>
+
+<dialog id="dialogue">
+  <div class="dialogue">
+    <h2>Votre grille est prête</h2>
+    <p id="d-resume"></p>
+    <p>Envoyez ce lien au bar, par SMS ou WhatsApp par exemple. Votre pari compte quand le barman l'a
+    validé, aux cotes du moment.</p>
+    <p class="lien-brut" id="d-lien"></p>
+    <div class="actions">
+      <button type="button" class="bouton" id="d-partager">Envoyer le lien…</button>
+      <button type="button" class="bouton second" id="d-copier">Copier le lien</button>
+      <button type="button" class="bouton second" id="d-fermer">Modifier ma grille</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="../grille.js"></script>
+<script>
+(function () {
+  'use strict';
+  var G = window.CodeGrille;
+  function $(id) { return document.getElementById(id); }
+  function element(balise, classe, texte) {
+    var el = document.createElement(balise);
+    if (classe) el.className = classe;
+    if (texte !== undefined) el.textContent = texte;
+    return el;
+  }
+  function lire(cle) { try { return localStorage.getItem(cle) || ''; } catch (e) { return ''; } }
+  function ecrire(cle, valeur) { try { localStorage.setItem(cle, valeur); } catch (e) { /* navigation privée */ } }
+
+  var ISSUES = ['1', 'N', '2'];
+  var EXPLICATIONS = { '1': 'Victoire à domicile', 'N': 'Match nul', '2': "Victoire à l'extérieur" };
+
+  var etat = { grille: null, matchs: [], choix: {}, formule: 'c', niveaux: [], mise: 1, envoi: null, lien: '' };
+
+  function alerte(texte) {
+    $('alerte').textContent = texte;
+    $('alerte').hidden = false;
+    $('jeu').hidden = true;
+    $('recap').hidden = true;
+  }
+
+  // ---- La grille ----
+
+  async function demarrer() {
+    var code = G.codeDe(location.hash);
+    if (!code) return alerte('Ce lien ne contient pas de grille. Demandez au bar le lien de la semaine.');
+    try {
+      etat.grille = await G.decoder(code);
+    } catch (e) {
+      if (e.message === 'navigateur') return alerte('Votre navigateur est trop ancien pour ouvrir cette grille. Mettez votre téléphone à jour, ou jouez au comptoir.');
+      if (e.message === 'version') return alerte('Cette grille demande une version plus récente de la page : rechargez-la.');
+      return alerte('Ce lien de grille est abîmé ou incomplet. Demandez-le à nouveau au bar.');
+    }
+    var grille = etat.grille;
+    if (!Array.isArray(grille.g)) {
+      if (Array.isArray(grille.c)) return alerte("Ce lien est une grille déjà jouée : il est destiné au barman, qui la valide dans l'app.");
+      return alerte("Ce lien n'est pas une grille à jouer. Demandez au bar le lien de la semaine.");
+    }
+
+    document.title = (grille.n || 'Grille') + ' — ' + (grille.t || 'Bob 1N2');
+    $('titre-jeu').textContent = grille.t || 'Bob 1N2';
+    $('sous-titre').textContent = (grille.n || '') + (grille.d ? ' · ' + G.jour(grille.d) : '');
+    etat.mise = Math.max(1, Math.round(grille.m) || 1);
+    $('nom').value = lire('bob1n2.nom');
+    $('numero').value = lire('bob1n2.numero');
+
+    var conteneur = $('matchs');
+    grille.g.forEach(function (groupe) {
+      if (!Array.isArray(groupe.r) || !groupe.r.length) return;
+      conteneur.appendChild(element('h2', 'categorie', groupe.c || 'Matchs'));
+      groupe.r.forEach(function (match) {
+        if (!match || !match.k || !Array.isArray(match.c) || match.c.length !== 3) return;
+        etat.matchs.push(match);
+        var carte = element('div', 'match');
+        var equipes = element('div', 'equipes');
+        equipes.append(element('span', '', match.d), element('span', 'vs', 'VS'), element('span', '', match.e));
+        var issues = element('div', 'issues');
+        ISSUES.forEach(function (issue, index) {
+          var bouton = element('button', 'issue');
+          bouton.type = 'button';
+          bouton.dataset.match = match.k;
+          bouton.dataset.issue = issue;
+          bouton.setAttribute('aria-pressed', 'false');
+          bouton.setAttribute('aria-label', EXPLICATIONS[issue] + ', cote ' + G.enCote(match.c[index] / 100) + ', ' + match.d + ' contre ' + match.e);
+          bouton.append(element('b', '', issue), element('span', '', G.enCote(match.c[index] / 100)));
+          bouton.addEventListener('click', function () { basculer(match.k, issue); });
+          issues.appendChild(bouton);
+        });
+        carte.append(equipes, issues);
+        conteneur.appendChild(carte);
+      });
+    });
+    if (!etat.matchs.length) return alerte('Tous les matchs de cette grille ont déjà un résultat.');
+
+    $('jeu').hidden = false;
+    $('recap').hidden = false;
+    brancher();
+    afficher();
+  }
+
+  function selection() {
+    return etat.matchs.filter(function (m) { return etat.choix[m.k]; }).map(function (m) {
+      var issue = etat.choix[m.k];
+      return { match: m, issue: issue, cote: m.c[ISSUES.indexOf(issue)] };
+    });
+  }
+
+  /** Les tailles cochées suivent le nombre de matchs ; par défaut toutes (le « Multi » complet). */
+  function ajusterNiveaux(avant) {
+    var n = selection().length;
+    if (etat.formule !== 's' || n < 2) return;
+    var complet = avant >= 2 && etat.niveaux.length === avant - 1 && etat.niveaux.every(function (k, i) { return k === i + 2; });
+    if (complet && n > avant) etat.niveaux = plage(n);
+    etat.niveaux = etat.niveaux.filter(function (k) { return k <= n; });
+    if (!etat.niveaux.length) etat.niveaux = plage(n);
+  }
+
+  function plage(n) {
+    var liste = [];
+    for (var k = 2; k <= n; k++) liste.push(k);
+    return liste;
+  }
+
+  function niveauxRetenus() {
+    return etat.formule === 's' ? etat.niveaux.slice().sort(function (a, b) { return a - b; }) : null;
+  }
+
+  function basculer(cle, issue) {
+    var avant = selection().length;
+    if (etat.choix[cle] === issue) {
+      delete etat.choix[cle];
+    } else {
+      if (etat.formule === 's' && !etat.choix[cle] && avant >= G.SYSTEME_MAX) return;
+      etat.choix[cle] = issue;
+    }
+    ajusterNiveaux(avant);
+    $('r-erreur').hidden = true;
+    afficher();
+  }
+
+  // ---- Affichage ----
+
+  function afficher() {
+    var choisis = selection();
+    var n = choisis.length;
+    var systeme = etat.formule === 's';
+    var plein = systeme && n >= G.SYSTEME_MAX;
+
+    document.querySelectorAll('.issue').forEach(function (bouton) {
+      var choix = etat.choix[bouton.dataset.match];
+      bouton.setAttribute('aria-pressed', choix === bouton.dataset.issue ? 'true' : 'false');
+      bouton.disabled = plein && !choix;
+    });
+
+    $('f-combine').setAttribute('aria-pressed', systeme ? 'false' : 'true');
+    $('f-systeme').setAttribute('aria-pressed', systeme ? 'true' : 'false');
+    $('aide-formule').textContent = systeme
+      ? 'Système (3 à 8 matchs) : chaque combinaison cochée est un petit combiné. Quelques erreurs sont permises.'
+      : 'Combiné : tous les matchs choisis doivent être gagnés. Gain = mise × produit des cotes.';
+
+    var niveaux = $('niveaux');
+    niveaux.hidden = !systeme;
+    niveaux.replaceChildren();
+    if (systeme) {
+      if (n < G.SYSTEME_MIN) {
+        niveaux.appendChild(element('p', 'aide', 'Choisissez de 3 à 8 matchs : ' + n + " pour l'instant."));
+      } else {
+        niveaux.appendChild(element('p', 'nom-systeme', etat.niveaux.length ? G.nomSysteme(n, etat.niveaux) : 'Cochez au moins une formule'));
+        plage(n).forEach(function (taille) {
+          var ligne = element('label');
+          var coche = element('input');
+          coche.type = 'checkbox';
+          coche.checked = etat.niveaux.indexOf(taille) >= 0;
+          coche.addEventListener('change', function () {
+            etat.niveaux = coche.checked
+              ? etat.niveaux.concat([taille])
+              : etat.niveaux.filter(function (k) { return k !== taille; });
+            afficher();
+          });
+          ligne.append(coche, element('span', '', taille + ' sur ' + n), element('span', '', G.combinaisons(n, taille) + ' comb.'));
+          niveaux.appendChild(ligne);
+        });
+      }
+    }
+
+    var cotes = choisis.map(function (c) { return c.cote / 100; });
+    var tailles = niveauxRetenus();
+    var evaluation = G.evaluer(cotes, tailles, etat.mise);
+    var combinaisons = G.nombreDeCombinaisons(n, tailles);
+    var total = G.arrondi(etat.mise * combinaisons);
+
+    $('r-matchs').textContent = n > 1 ? n + ' matchs' : n + ' match';
+    $('r-cote').textContent = combinaisons > 1 ? combinaisons + ' combinaisons'
+      : (n ? 'Cote ' + G.enCote(evaluation.coteTotale) : 'Touchez 1, N ou 2');
+    $('l-mise').textContent = combinaisons > 1 ? 'Mise par comb.' : 'Mise';
+    if (document.activeElement !== $('mise')) $('mise').value = etat.mise;
+    $('r-total').textContent = 'Total ' + G.enPoints(total);
+    $('r-gains').textContent = G.enPoints(evaluation.gainMaximum);
+    $('envoyer').disabled = n === 0;
+    document.body.style.paddingBottom = ($('recap').offsetHeight + 24) + 'px';
+  }
+
+  function erreur(texte) {
+    $('r-erreur').textContent = texte;
+    $('r-erreur').hidden = false;
+    afficher();
+  }
+
+  // ---- Envoi ----
+
+  async function envoyer() {
+    var grille = etat.grille;
+    var nom = $('nom').value.trim().replace(/\s+/g, ' ');
+    var choisis = selection();
+    var n = choisis.length;
+    if (nom.length < 2) {
+      $('nom').focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return erreur('Indiquez votre prénom et votre nom, pour que le barman vous retrouve.');
+    }
+    if (!n) return erreur('Touchez 1, N ou 2 sur au moins un match.');
+    if (etat.formule === 's') {
+      if (n < G.SYSTEME_MIN || n > G.SYSTEME_MAX) return erreur('Un système se joue sur 3 à 8 matchs.');
+      if (!etat.niveaux.length) return erreur('Cochez au moins une formule (« 2 sur … », « 3 sur … »…).');
+    }
+
+    var numero = parseInt($('numero').value, 10);
+    ecrire('bob1n2.nom', nom);
+    ecrire('bob1n2.numero', numero > 0 ? String(numero) : '');
+
+    var jouee = { v: G.VERSION, j: grille.j, n: grille.n, u: '', p: nom };
+    if (numero > 0) jouee.no = numero;
+    jouee.f = etat.formule;
+    if (etat.formule === 's') jouee.k = niveauxRetenus();
+    jouee.m = etat.mise;
+    jouee.c = choisis.map(function (c) { return { k: c.match.k, i: c.issue, c: c.cote }; });
+
+    // La même grille renvoyée garde son identifiant : le bar ne la comptera qu'une fois.
+    var signature = JSON.stringify(jouee);
+    if (!etat.envoi || etat.envoi.signature !== signature) etat.envoi = { signature: signature, identifiant: G.identifiant() };
+    jouee.u = etat.envoi.identifiant;
+
+    var code = await G.coder(jouee);
+    etat.lien = new URL('../recu/#' + code, location.href).href;
+
+    var tailles = niveauxRetenus();
+    var combinaisons = G.nombreDeCombinaisons(n, tailles);
+    var formule = tailles ? G.nomSysteme(n, tailles) + ' · ' + combinaisons + ' combinaisons' : (n > 1 ? 'Combiné · ' + n + ' matchs' : 'Simple · 1 match');
+    $('d-resume').textContent = nom + ' · ' + grille.n + ' · ' + formule + ' · mise totale ' + G.enPoints(G.arrondi(etat.mise * combinaisons)) + '.';
+    $('d-lien').textContent = etat.lien;
+    $('d-partager').hidden = !navigator.share;
+    $('d-copier').textContent = 'Copier le lien';
+    $('dialogue').showModal();
+  }
+
+  async function partager() {
+    try {
+      await navigator.share({ title: 'Ma grille · ' + etat.grille.n, text: 'Ma grille pour ' + etat.grille.n + ' :', url: etat.lien });
+    } catch (e) { /* partage annulé */ }
+  }
+
+  async function copier() {
+    try {
+      await navigator.clipboard.writeText(etat.lien);
+      $('d-copier').textContent = 'Lien copié ✓';
+    } catch (e) {
+      var plage = document.createRange();
+      plage.selectNodeContents($('d-lien'));
+      var choix = window.getSelection();
+      choix.removeAllRanges();
+      choix.addRange(plage);
+      $('d-copier').textContent = 'Lien sélectionné : copiez-le';
+    }
+  }
+
+  // ---- Commandes ----
+
+  function brancher() {
+    $('f-combine').addEventListener('click', function () { etat.formule = 'c'; afficher(); });
+    $('f-systeme').addEventListener('click', function () {
+      var n = selection().length;
+      if (n > G.SYSTEME_MAX) return erreur('Un système se joue sur 8 matchs au plus : retirez-en ' + (n - G.SYSTEME_MAX) + '.');
+      etat.formule = 's';
+      etat.niveaux = n >= 2 ? plage(n) : [];
+      afficher();
+    });
+    $('moins').addEventListener('click', function () { etat.mise = Math.max(1, etat.mise - 1); afficher(); });
+    $('plus').addEventListener('click', function () { etat.mise = Math.min(99999, etat.mise + 1); afficher(); });
+    $('mise').addEventListener('input', function () {
+      var valeur = parseInt($('mise').value.replace(/\D/g, ''), 10);
+      if (valeur > 0) { etat.mise = valeur; afficher(); }
+    });
+    $('mise').addEventListener('blur', function () { $('mise').value = etat.mise; });
+    $('numero').addEventListener('input', function () { $('numero').value = $('numero').value.replace(/\D/g, ''); });
+    $('envoyer').addEventListener('click', envoyer);
+    $('d-partager').addEventListener('click', partager);
+    $('d-copier').addEventListener('click', copier);
+    $('d-fermer').addEventListener('click', function () { $('dialogue').close(); });
+    window.addEventListener('resize', afficher);
+  }
+
+  // Un autre lien ouvert dans le même onglet : on relit la page.
+  window.addEventListener('hashchange', function () { location.reload(); });
+  demarrer();
+})();
+</script>
+</body>
+</html>
