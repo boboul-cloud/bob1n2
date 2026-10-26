@@ -75,3 +75,7 @@ dialog::backdrop { background: rgba(0,0,0,.5); }
 .lien-brut { font-size: 12px; line-height: 1.4; word-break: break-all; color: var(--doux); background: var(--fond); padding: 8px 10px; border-radius: 8px;
              max-height: 5.6em; overflow: hidden; }
 .jeu footer { text-align: center; }
+
+/* « Retour à l'accueil » : seulement quand l'app ouvre la page en aperçu. */
+.jeu .retour-app:not([hidden]) { display: inline-flex; align-items: center; min-height: 32px; margin: -4px 0 8px;
+  color: #fff; font-size: 16px; font-weight: 600; text-decoration: none; }

@@ -14,6 +14,7 @@
 <body class="jeu">
 <header class="bandeau">
   <div class="dedans">
+    <a id="retour-app" class="retour-app" href="../#/accueil" hidden>‹ Retour à l'accueil</a>
     <h1><img class="icone" src="../icones/icone-180.png" alt="" width="40" height="40"><span id="titre-jeu">BOB 1N2</span></h1>
     <p class="sous-titre" id="sous-titre">Jouer la grille</p>
   </div>
@@ -86,6 +87,17 @@
   </div>
 </dialog>
 
+<script>
+  // Ouverte depuis l'app (« Voir la page du joueur ») : un retour à son accueil. Les joueurs, qui
+  // arrivent par leur lien, ne le voient pas.
+  (function () {
+    var apercu = new URLSearchParams(location.search).get('apercu');
+    if (apercu === null) return;
+    var retour = document.getElementById('retour-app');
+    retour.href = apercu === 'demo' ? '../?demo#/accueil' : '../#/accueil';
+    retour.hidden = false;
+  })();
+</script>
 <script src="../partage/grille.js"></script>
 <script>
 (function () {

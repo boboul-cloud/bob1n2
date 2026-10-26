@@ -10,7 +10,7 @@
 // - « Coller » lit le presse-papiers ; si le navigateur refuse, une zone de texte reçoit le lien.
 
 import { html, useEffect, useMemo, useState } from '../../vendor/preact-htm.js';
-import { useEtat, modifier } from '../store.js';
+import { useEtat, modifier, modeDemo } from '../store.js';
 import * as M from '../modele.js';
 import * as Caisse from '../caisse.js';
 import * as D from '../grille-a-distance.js';
@@ -21,9 +21,17 @@ import {
   Ligne, LigneValeur, Menu, PastilleNumero, Section, Vide,
 } from '../ui/composants.js';
 import { alerte, annoncer, confirmer, demanderCode } from '../ui/dialogues.js';
-import { copier, estAppareilMobile, lirePressePapiers, ouvrirLien, ouvrirSMS, partager } from '../ui/systeme.js';
+import { copier, estAppareilMobile, lirePressePapiers, ouvrirSMS, partager } from '../ui/systeme.js';
 import { svgQR } from '../qr.js';
 import { imprimerAffichette } from './imprimables.js';
+
+/** « Voir la page du joueur » : la page s'ouvre à la place de l'app, en aperçu (« ?apercu » avant
+ *  le « # », jamais dans la grille) ; elle montre alors « Retour à l'accueil », que les joueurs
+ *  ne voient pas. Dans l'app de l'écran d'accueil, sans barre de navigation, c'est le seul retour. */
+function voirLaPageDuJoueur(lien) {
+  const [adresse, code = ''] = String(lien).split('#');
+  location.href = `${adresse}?apercu${modeDemo ? '=demo' : ''}#${code}`;
+}
 
 // Quelques styles propres à ces écrans (QR code, étapes, choix d'une grille reçue).
 const STYLE = `
@@ -200,7 +208,7 @@ export function EnvoiGrilleSheet({ journeeId, onFermer }) {
       <${Ligne} action icone=${copie ? 'checkmark' : 'doc.on.doc'} titre=${copie ? 'Lien copié' : 'Copier le lien'}
         onClick=${async () => { if (await copier(lien)) setCopie(true); }} />
       <${Ligne} action icone="printer" titre="Affichette à imprimer" onClick=${() => imprimerAffichette(journee.id, lien)} />
-      <${Ligne} action icone="safari" titre="Voir la page du joueur" onClick=${() => ouvrirLien(lien)} />
+      <${Ligne} action icone="safari" titre="Voir la page du joueur" onClick=${() => voirLaPageDuJoueur(lien)} />
     <//>`}
 
     <${Section} titre="Bon à savoir" classe="dist-petit">

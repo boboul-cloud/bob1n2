@@ -1,7 +1,7 @@
 // Fabriqué par Tools/sw-web.mjs : ne pas modifier à la main.
 // Garde les fichiers de Bob 1N2 pour qu'il marche sans connexion. Aucune donnée ne passe par ici :
 // joueurs, grilles et paris restent dans la base du navigateur (IndexedDB).
-const VERSION = 'bob1n2-f4986c4f26cc';
+const VERSION = 'bob1n2-29c70b7f78d4';
 const FICHIERS = [
  "./",
  "jouer/",
