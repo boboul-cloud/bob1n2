@@ -38,7 +38,7 @@ export function Ecran({ titre, sousTitre, retour, libelleRetour = 'Retour', acti
     }
   };
   useEffect(() => {
-    document.title = titre ? `${titre} · Bob 1N2` : 'Bob 1N2';
+    document.title = titre && titre !== 'Bob 1N2' ? `${titre} · Bob 1N2` : 'Bob 1N2';
   }, [titre]);
   return html`<div class=${classes('ecran', large && 'large')}>
     <header class="entete">
