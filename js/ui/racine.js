@@ -27,6 +27,7 @@ import { ImportCalendrierSheet } from '../ecrans/calendrier-vues.js';
 import { ReglagesView } from '../ecrans/reglages.js';
 import { ModeDEmploiView } from '../ecrans/mode-emploi.js';
 import { PariEditeur } from '../ecrans/pari-editeur.js';
+import { FeuillePDF } from './pdf.js';
 
 export const RUBRIQUES = {
   accueil: { titre: 'Accueil', symbole: 'house', vue: () => html`<${AccueilView} />` },
@@ -114,10 +115,13 @@ export function Racine() {
   const [nouveauJoueur, setNouveauJoueur] = useState(false);
   const [grilleRecue, setGrilleRecue] = useState(null);
   const [calendrierRecu, setCalendrierRecu] = useState(null);
+  const [documentPDF, setDocumentPDF] = useState(null);
 
   useEffect(() => ecouter('nouveauPari', (d) => setPari(d ?? {})), []);
   useEffect(() => ecouter('nouveauJoueur', () => setNouveauJoueur(true)), []);
   useEffect(() => ecouter('ouvrirCalendrierRecu', (d) => setCalendrierRecu(d)), []);
+  // Un document imprimé sur iPhone ou iPad : en PDF, par la feuille de partage (impression.js).
+  useEffect(() => ecouter('documentPDF', (d) => setDocumentPDF({ ...d, cle: Math.random() })), []);
 
   // Une grille jouée à distance : le lien « …/#/grille/<code> » de la page recu/.
   useEffect(() => {
@@ -162,5 +166,6 @@ export function Racine() {
     ${grilleRecue && html`<${GrilleRecueFiche} grilleId=${grilleRecue.grilleId} dejaRecue=${grilleRecue.dejaRecue}
       onFermer=${() => setGrilleRecue(null)} />`}
     ${calendrierRecu && html`<${ImportCalendrierSheet} poules=${calendrierRecu.poules} onFermer=${() => setCalendrierRecu(null)} />`}
+    ${documentPDF && html`<${FeuillePDF} key=${documentPDF.cle} document=${documentPDF} onFermer=${() => setDocumentPDF(null)} />`}
     <${HoteDialogues} />`;
 }

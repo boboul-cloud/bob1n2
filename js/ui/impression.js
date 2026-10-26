@@ -5,12 +5,20 @@
 
 import { html, render } from '../../vendor/preact-htm.js';
 import { Menu } from './composants.js';
+import { estIOS } from './systeme.js';
+import { emettre } from './evenements.js';
 
 /**
  * Imprime des pages. `pages` : un élément htm (ou une liste) fait de <div class="page-a4">…</div>.
  * Les styles propres aux pages peuvent être donnés par `style` (texte CSS).
  */
 export function imprimer({ titre, pages, style = '' }) {
+  // iPhone, iPad : Safari n'imprime qu'une fois par page, et l'app de l'écran d'accueil pas du tout.
+  // Le document part en PDF, par la feuille de partage (« Imprimer » y figure) : voir pdf.js.
+  if (estIOS()) {
+    emettre('documentPDF', { titre, pages, style });
+    return;
+  }
   let hote = document.getElementById('impression');
   if (!hote) {
     hote = document.createElement('div');
