@@ -1,0 +1,18 @@
+{
+  "name": "Bob 1N2",
+  "short_name": "Bob 1N2",
+  "description": "Le concours de pronostics foot du comptoir, en points virtuels.",
+  "lang": "fr",
+  "start_url": "./#/accueil",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f2f2f7",
+  "theme_color": "#1b8e56",
+  "categories": ["sports", "entertainment"],
+  "icons": [
+    { "src": "icones/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

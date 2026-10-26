@@ -1,7 +1,7 @@
 /* Bob 1N2 — le jeu à distance, côté joueur.
  *
- * Même format que l'app (Sources/Core/GrilleADistance.swift) : du JSON en base64 URL,
- * compressé (DEFLATE brut) et préfixé « z », ou tel quel et préfixé « j ».
+ * Même format que l'app (js/grille-a-distance.js, et GrilleADistance.swift de l'app iOS) : du JSON
+ * en base64 URL, compressé (DEFLATE brut) et préfixé « z », ou tel quel et préfixé « j ».
  * Tout se passe après le « # » de l'adresse, que le navigateur n'envoie pas au site :
  * la grille ne quitte le téléphone que par le lien que le joueur choisit d'envoyer.
  */
