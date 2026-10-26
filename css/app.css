@@ -750,3 +750,8 @@ textarea.entree { min-height: 140px; resize: vertical; font-family: ui-monospace
 .ligne.bleu, .bleu { color: var(--bleu); }
 .ligne.accent, .accent { color: var(--accent); }
 .ligne.secondaire, .secondaire { color: var(--texte-2); }
+
+/* Les encadrés colorés gardent un texte lisible : seule l'icône prend la couleur. */
+.encadre.orange, .encadre.rouge { color: var(--texte); }
+.encadre.orange > .icone { color: var(--orange); }
+.encadre.rouge > .icone { color: var(--rouge); }

@@ -15,6 +15,7 @@ import { NouvelleJourneeSheet } from './journees.js';
 import { PariEditeur } from './pari-editeur.js';
 import { JoueurFormulaire, AchatSheet } from './joueur-actions.js';
 import { MatchsDuCalendrierSheet } from './calendrier-vues.js';
+import { BoutonEcranDAccueil } from '../ui/installation.js';
 
 export function AccueilView() {
   const etat = useEtat();
@@ -63,6 +64,7 @@ export function AccueilView() {
           <//>`}
           ${journeeEnCours && actifs.length > 0 && html`<${Participation} journee=${journeeEnCours} actifs=${actifs} />`}
           <${Chiffres} actifs=${actifs} />`}
+      <${BoutonEcranDAccueil} />
     </div>
     ${pariSur && html`<${PariEditeur} journeeId=${pariSur} onFermer=${() => setPariSur(null)} />`}
     ${creationJournee && html`<${NouvelleJourneeSheet} onFermer=${() => setCreationJournee(false)} />`}

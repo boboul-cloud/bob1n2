@@ -1,0 +1,164 @@
+// Mettre Bob 1N2 sur l'écran d'accueil (ou l'installer sur un ordinateur), d'après le navigateur :
+//  - Chrome, Edge, Android : le navigateur propose lui-même l'installation (`beforeinstallprompt`),
+//    que le bouton déclenche ;
+//  - iPhone, iPad : aucune page ne peut le faire elle-même ; seul Partager › « Sur l'écran
+//    d'accueil » de Safari (ou de Chrome) l'ajoute : la feuille montre les gestes ;
+//  - Safari sur Mac : Fichier › « Ajouter au Dock… ».
+// Sur iPhone, iPad et Mac, l'app ajoutée a sa propre mémoire, séparée de Safari : ses données n'y
+// sont pas, d'où la sauvegarde à restaurer.
+
+import { html, useEffect, useState } from '../../vendor/preact-htm.js';
+import { lire, exporter } from '../store.js';
+import { Feuille, Section, Ligne, Bouton, Icone, Encadre } from './composants.js';
+import { estIOS, telecharger } from './systeme.js';
+import { annoncer } from './dialogues.js';
+import { versChampDate } from '../format.js';
+
+/** L'invitation du navigateur, gardée pour le bouton (Chrome, Edge, Android). */
+let invitation = null;
+const suivants = new Set();
+
+if (typeof window !== 'undefined') {
+  addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    invitation = e;
+    suivants.forEach((f) => f());
+  });
+  addEventListener('appinstalled', () => {
+    invitation = null;
+    suivants.forEach((f) => f());
+  });
+}
+
+/** Déjà ouverte depuis l'écran d'accueil (ou installée) : le bouton n'a plus lieu d'être. */
+export function estInstallee() {
+  return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+
+/** « ios-safari », « ios-autre », « android », « mac-safari », « ordinateur ». */
+export function plateforme() {
+  const ua = navigator.userAgent;
+  if (estIOS()) return /CriOS|FxiOS|EdgiOS|OPiOS/.test(ua) ? 'ios-autre' : 'ios-safari';
+  if (/Android/i.test(ua)) return 'android';
+  if (/Macintosh/.test(ua) && /Safari\//.test(ua) && !/Chrome|Chromium|Edg|Firefox/.test(ua)) return 'mac-safari';
+  return 'ordinateur';
+}
+
+/** Le libellé du bouton : « Sur l'écran d'accueil » sur téléphone et tablette, « Installer l'app » ailleurs. */
+export function libelleInstallation() {
+  return ['ordinateur', 'mac-safari'].includes(plateforme()) ? "Installer l'app" : "Sur l'écran d'accueil";
+}
+
+/** Pour un composant : redessine quand le navigateur propose (ou retire) son invitation. */
+function useInvitation() {
+  const [, setN] = useState(0);
+  useEffect(() => {
+    const f = () => setN((n) => n + 1);
+    suivants.add(f);
+    return () => suivants.delete(f);
+  }, []);
+  return invitation;
+}
+
+/** La base contient quelque chose qui vaut une sauvegarde. */
+function aDesDonnees() {
+  const e = lire();
+  return e.joueurs.length + e.journees.length + e.championnats.length > 0;
+}
+
+/** Le bouton de l'accueil ; absent quand l'app est déjà ouverte depuis l'écran d'accueil. */
+export function BoutonEcranDAccueil() {
+  const [ouverte, setOuverte] = useState(false);
+  if (estInstallee()) return null;
+  return html`
+    <${Bouton} bloc taille="grand" icone="iphone" onClick=${() => setOuverte(true)}>${libelleInstallation()}<//>
+    ${ouverte && html`<${FeuilleEcranDAccueil} onFermer=${() => setOuverte(false)} />`}`;
+}
+
+export function FeuilleEcranDAccueil({ onFermer }) {
+  const invite = useInvitation();
+  const quelle = plateforme();
+  const memoireAPart = ['ios-safari', 'ios-autre', 'mac-safari'].includes(quelle);
+
+  const installer = async () => {
+    if (!invitation) return;
+    const e = invitation;
+    e.prompt();
+    const { outcome } = await e.userChoice;
+    invitation = null;
+    if (outcome === 'accepted') {
+      annoncer('Bob 1N2 est installé.');
+      onFermer();
+    }
+  };
+
+  const sauvegarder = () => {
+    telecharger(`Bob 1N2 – sauvegarde ${versChampDate(new Date())}.json`, exporter());
+    annoncer('Sauvegarde enregistrée');
+  };
+
+  const etape = (n, contenu) => html`<li class="inst-etape"><span class="inst-numero">${n}</span><span>${contenu}</span></li>`;
+  const partager = html`<span class="inst-symbole"><${Icone} nom="square.and.arrow.up" taille=${16} /></span>`;
+
+  let corps;
+  // Safari (iPhone, iPad, Mac) ne propose jamais d'installation à une page : ses propres gestes.
+  if (invite && !memoireAPart) {
+    corps = html`<${Section} pied="Bob 1N2 s'ouvre alors comme une app, avec son icône, même sans connexion.">
+      <${Ligne} action icone="square.and.arrow.down" titre="Installer Bob 1N2" onClick=${installer} />
+    <//>`;
+  } else if (quelle === 'ios-safari' || quelle === 'ios-autre') {
+    corps = html`<${Section} titre=${quelle === 'ios-safari' ? 'Dans Safari' : 'Dans votre navigateur'} nue>
+      <ol class="inst-etapes">
+        ${etape(1, html`Touchez Partager ${partager} : en bas de l'écran sur iPhone, en haut sur iPad${quelle === 'ios-autre' ? ' (dans Chrome, à droite de la barre d\'adresse)' : ''}.`)}
+        ${etape(2, html`Faites défiler, puis touchez « Sur l'écran d'accueil ».`)}
+        ${etape(3, html`Touchez « Ajouter » : l'icône de Bob 1N2 rejoint vos apps. Elle s'ouvre comme une app, même sans connexion.`)}
+      </ol>
+    <//>`;
+  } else if (quelle === 'mac-safari') {
+    corps = html`<${Section} titre="Dans Safari" nue>
+      <ol class="inst-etapes">
+        ${etape(1, html`Menu Fichier › « Ajouter au Dock… ».`)}
+        ${etape(2, html`« Ajouter » : Bob 1N2 s'ouvre depuis le Dock, dans sa propre fenêtre.`)}
+      </ol>
+    <//>`;
+  } else if (quelle === 'android') {
+    corps = html`<${Section} titre="Dans votre navigateur" nue>
+      <ol class="inst-etapes">
+        ${etape(1, html`Ouvrez le menu du navigateur (⋮).`)}
+        ${etape(2, html`Touchez « Installer l'application » ou « Ajouter à l'écran d'accueil ».`)}
+      </ol>
+    <//>`;
+  } else {
+    corps = html`<${Section} titre="Dans votre navigateur" nue>
+      <ol class="inst-etapes">
+        ${etape(1, html`Chrome ou Edge : l'icône d'installation au bout de la barre d'adresse, ou le menu › « Installer Bob 1N2 ».`)}
+        ${etape(2, html`Un autre navigateur ne sait pas toujours installer une app : ouvrez cette adresse dans Chrome ou Edge, ou gardez-la en favori.`)}
+      </ol>
+    <//>`;
+  }
+
+  return html`<${Feuille} titre=${libelleInstallation()} onFermer=${onFermer} gauche=${null}
+      droite=${{ libelle: 'OK', onClick: onFermer }} compacte>
+    ${corps}
+    ${memoireAPart && html`<${Section} titre="Vos données" nue>
+      <${Encadre} icone="exclamationmark.triangle" couleur="orange">
+        L'app de l'écran d'accueil a sa propre mémoire, séparée de Safari : les joueurs, journées et paris
+        saisis ici n'y seront pas. Pour les y retrouver : enregistrez une sauvegarde, puis, dans l'app ouverte
+        depuis l'écran d'accueil, Réglages › Sauvegarde › « Restaurer une sauvegarde… ». Ensuite, tenez le
+        concours toujours dans l'app de l'écran d'accueil.
+      <//>
+      ${aDesDonnees() && html`<div style="margin-top:12px">
+        <${Bouton} bloc icone="square.and.arrow.down" onClick=${sauvegarder}>Enregistrer une sauvegarde<//>
+      </div>`}
+    <//>`}
+    <style>
+      .inst-etapes { list-style: none; margin: 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px;
+        background: var(--surface); border-radius: var(--rayon); }
+      .inst-etape { display: flex; gap: 10px; align-items: baseline; line-height: 1.45; }
+      .inst-numero { flex: none; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+        background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; transform: translateY(-1px); }
+      .inst-symbole { display: inline-grid; place-items: center; width: 26px; height: 24px; border-radius: 6px;
+        background: var(--surface-3); color: var(--bleu); vertical-align: -6px; }
+    </style>
+  <//>`;
+}

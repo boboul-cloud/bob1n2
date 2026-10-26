@@ -3,6 +3,8 @@
 import { html, render } from '../vendor/preact-htm.js';
 import { charger } from './store.js';
 import { Racine } from './ui/racine.js';
+// Tôt : l'invitation à installer l'app (Chrome, Edge, Android) arrive peu après le chargement.
+import './ui/installation.js';
 
 async function demarrer() {
   const parametres = new URLSearchParams(location.search);
