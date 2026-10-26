@@ -1,14 +1,16 @@
-// Les réglages d'une base neuve : ceux du classeur (porte-feuilles de 20 points, rajout de
-// 20 points) ; voir Reglages.swift. Fichier à part pour que store.js n'importe rien d'autre.
+// Les réglages d'une base neuve (choisis par l'utilisateur le 26 octobre 2026 : porte-feuilles de
+// 10 points, rajout de 5, mise de 5, 250 points pour 1 € offert, 5 points par euro dépensé) ;
+// l'app native partait de ceux du classeur (Reglages.swift). Fichier à part pour que store.js
+// n'importe rien d'autre.
 
 export const REGLAGES_PAR_DEFAUT = {
   /** Titre affiché en tête de l'accueil et des documents imprimés. */
   titreJeu: '',
-  pointsDepart: 20,
-  rechargeParDefaut: 20,
+  pointsDepart: 10,
+  rechargeParDefaut: 5,
   miseParDefaut: 5,
   /** Consommations offertes : tant de points pour 1 € de consommation. */
-  pointsParEuro: 10,
+  pointsParEuro: 250,
   /** Marge prise sur les cotes proposées (0,30 = 30 %). */
   margeCotes: 0.30,
   /** Site où l'on consulte les résultats : un simple lien ouvert dans le navigateur. */
@@ -16,7 +18,7 @@ export const REGLAGES_PAR_DEFAUT = {
   /** Points de fidélité : chaque consommation payée hors paris rapporte des points. */
   fideliteActive: true,
   fideliteDepense: 1,
-  fidelitePoints: 1,
+  fidelitePoints: 5,
   fideliteParTranche: false,
   /** Le téléphone du bar : les joueurs qui jouent à distance y renvoient leur grille. */
   telephoneBar: '',
