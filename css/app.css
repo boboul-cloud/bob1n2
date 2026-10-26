@@ -720,9 +720,11 @@ textarea.entree { min-height: 140px; resize: vertical; font-family: ui-monospace
 
 @media print {
   @page { size: A4; margin: 0; }
-  html, body { background: #fff !important; color: #000 !important; }
-  body > *:not(#impression) { display: none !important; }
-  #impression { display: block !important; }
+  /* Seulement pendant l'impression d'un document de l'app (impression.js) : sinon, la page s'imprime
+     comme elle est à l'écran. */
+  body.impression-en-cours { background: #fff !important; color: #000 !important; }
+  body.impression-en-cours > *:not(#impression) { display: none !important; }
+  body.impression-en-cours #impression { display: block !important; }
 }
 
 .page-a4 {

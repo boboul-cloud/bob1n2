@@ -14,7 +14,10 @@ import { ETATS_PRONOSTIC, rangsPoints, trierJoueurs } from '../calcul.js';
 import { enCote, enEuros, enPoints, heure, jour } from '../format.js';
 import { aOffrir, titreAffiche } from '../reglages.js';
 import { imprimer } from '../ui/impression.js';
-import { svgQR } from '../qr.js';
+import { chargerQR, qrPret, svgQR, svgQRImmediat } from '../qr.js';
+
+// La bibliothèque du QR code est chargée d'avance : l'affichette s'imprime alors sans attendre.
+if (typeof document !== 'undefined') chargerQR().catch(() => {});
 
 export const LIGNES_PAR_PAGE_GRILLE = 24;
 export const LIGNES_PAR_PAGE_CLASSEMENT = 32;
@@ -27,10 +30,16 @@ export function imprimerGrille(journeeId) {
   if (doc) imprimer(doc);
 }
 
-/** À afficher au comptoir : le QR code qui ouvre la grille sur le téléphone des joueurs. */
-export async function imprimerAffichette(journeeId, lien) {
-  const doc = await documentAffichette(journeeId, lien);
-  if (doc) imprimer(doc);
+/** À afficher au comptoir : le QR code qui ouvre la grille sur le téléphone des joueurs.
+ *  Safari n'ouvre l'impression que dans le geste même de l'utilisateur : quand la bibliothèque du QR
+ *  code est là (elle l'est dès que l'écran d'envoi montre le QR), tout se fait sans attendre. */
+export function imprimerAffichette(journeeId, lien) {
+  if (qrPret()) {
+    const doc = affichette(journeeId, lien, qrDeLAffichette(() => svgQRImmediat(String(lien ?? ''), OPTIONS_QR)));
+    if (doc) imprimer(doc);
+    return;
+  }
+  documentAffichette(journeeId, lien).then((doc) => { if (doc) imprimer(doc); });
 }
 
 export function imprimerTicket(pariId) {
@@ -71,16 +80,32 @@ export function documentGrille(journeeId) {
   };
 }
 
+/** Comme CodeQR.image : niveau de correction « L », marge d'un module. */
+const OPTIONS_QR = { taille: '100%', marge: 1, correction: 'L' };
+
+/** Le QR code de l'affichette, ou '' si le lien est trop long : elle part alors sans image, comme
+ *  dans le Swift. */
+function qrDeLAffichette(fabriquer) {
+  try {
+    return fabriquer() ?? '';
+  } catch {
+    return '';
+  }
+}
+
 export async function documentAffichette(journeeId, lien) {
-  const journee = M.journee(journeeId);
-  if (!journee) return null;
   let qr = '';
   try {
-    // Comme CodeQR.image : niveau de correction « L ».
-    qr = await svgQR(String(lien ?? ''), { taille: '100%', marge: 1, correction: 'L' });
+    qr = await svgQR(String(lien ?? ''), OPTIONS_QR);
   } catch {
-    qr = ''; // lien trop long pour un QR code : l'affichette part sans image, comme dans le Swift
+    qr = '';
   }
+  return affichette(journeeId, lien, qr);
+}
+
+function affichette(journeeId, lien, qr) {
+  const journee = M.journee(journeeId);
+  if (!journee) return null;
   return {
     titre: `Affichette – ${journee.titre}`,
     style: STYLE,

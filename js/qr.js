@@ -69,12 +69,20 @@ function preparer(qrcode) {
   return qrcode;
 }
 
-async function fabriquer(texte, correction) {
-  const qrcode = await chargerQR();
+function construire(qrcode, texte, correction) {
   const qr = qrcode(0, correction); // 0 : la plus petite version qui contient le texte
   qr.addData(String(texte ?? ''), 'Byte');
   qr.make();
   return qr;
+}
+
+async function fabriquer(texte, correction) {
+  return construire(await chargerQR(), texte, correction);
+}
+
+/** La bibliothèque est déjà chargée : `svgQRImmediat` peut servir. */
+export function qrPret() {
+  return !!globalThis.qrcode?.stringToBytesFuncs;
 }
 
 /** La matrice du QR code : `modules` de côté, `sombre(ligne, colonne)` vrai pour un module noir. */
@@ -84,8 +92,18 @@ export async function matriceQR(texte, { correction = 'L' } = {}) {
 }
 
 /** Le QR code en SVG (texte), carré de `taille`, avec sa marge blanche. */
-export async function svgQR(texte, { taille = 256, marge = 4, correction = 'L', couleur = '#000', fond = '#fff' } = {}) {
-  const qr = await fabriquer(texte, correction);
+export async function svgQR(texte, options = {}) {
+  return dessiner(await fabriquer(texte, options.correction ?? 'L'), options);
+}
+
+/** Le même, tout de suite, sans attendre : `null` si la bibliothèque n'est pas encore chargée.
+ *  Sert à l'impression, que Safari n'ouvre que dans le geste même de l'utilisateur. */
+export function svgQRImmediat(texte, options = {}) {
+  if (!qrPret()) return null;
+  return dessiner(construire(preparer(globalThis.qrcode), texte, options.correction ?? 'L'), options);
+}
+
+function dessiner(qr, { taille = 256, marge = 4, couleur = '#000', fond = '#fff' } = {}) {
   const n = qr.getModuleCount();
   const cote = n + 2 * marge;
   // Un rectangle par suite de modules noirs d'une même ligne : un chemin court.

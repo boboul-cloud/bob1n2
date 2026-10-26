@@ -18,16 +18,24 @@ export function imprimer({ titre, pages, style = '' }) {
     document.body.append(hote);
   }
   render(html`${style && html`<style>${style}</style>`}${pages}`, hote);
+  // Pendant ce travail, l'impression ne montre que ces pages (sinon : l'écran, comme une page web).
+  document.body.classList.add('impression-en-cours');
   const ancienTitre = document.title;
   document.title = titre.replace(/[/:]/g, '-');
   const finir = () => {
     document.title = ancienTitre;
-    render(null, hote);
     removeEventListener('afterprint', finir);
+    // Les pages restent posées jusqu'au prochain geste dans l'app : sur iPhone, la fenêtre
+    // d'impression peut encore les relire (format du papier, aperçu).
+    addEventListener('pointerdown', () => {
+      document.body.classList.remove('impression-en-cours');
+      render(null, hote);
+    }, { once: true, capture: true });
   };
   addEventListener('afterprint', finir);
-  // Laisse au navigateur le temps de mettre les pages en forme (et les images en mémoire).
-  requestAnimationFrame(() => setTimeout(() => window.print(), 60));
+  // Tout de suite, dans le geste de l'utilisateur : Safari (iPhone, iPad, Mac) ignore une impression
+  // demandée après coup. Les pages sont déjà posées (rendu synchrone) ; print() les met en forme.
+  window.print();
 }
 
 /** Le menu « Imprimer » des pages imprimables (MenuDocument.swift). `onImprimer` fabrique et imprime.
