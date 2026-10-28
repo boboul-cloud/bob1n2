@@ -128,9 +128,21 @@ export function choisirFichier(accept) {
   });
 }
 
-/** Propose un fichier à enregistrer (sauvegarde). */
-export function telecharger(nomFichier, contenu, type = 'application/json') {
+/** Propose un fichier à enregistrer (sauvegarde, PDF). Sur iPhone et iPad, par la feuille de partage
+ *  (« Enregistrer dans Fichiers ») : dans une app de l'écran d'accueil, un téléchargement ne mène nulle part. */
+export async function telecharger(nomFichier, contenu, type = 'application/json') {
   const blob = contenu instanceof Blob ? contenu : new Blob([contenu], { type });
+  if (estIOS() && navigator.canShare) {
+    const fichier = new File([blob], nomFichier, { type: blob.type || type });
+    if (navigator.canShare({ files: [fichier] })) {
+      try {
+        await navigator.share({ files: [fichier] });
+        return;
+      } catch (erreur) {
+        if (erreur?.name === 'AbortError') return;
+      }
+    }
+  }
   const url = URL.createObjectURL(blob);
   const lien = document.createElement('a');
   lien.href = url;

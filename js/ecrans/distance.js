@@ -480,7 +480,7 @@ export function GrilleRecueFiche({ grilleId, dejaRecue = false, onFermer }) {
     if (await copier(`${Site.recu}#${grille.code}`)) setGrilleCopiee(true);
   };
   const ailleurs = estIOS() && !estInstallee()
-    ? "Sur iPhone et iPad, l'app ajoutée à l'écran d'accueil a sa propre mémoire, séparée de Safari, et un lien reçu s'ouvre toujours dans Safari. Si vous tenez le concours dans l'app de l'écran d'accueil : copiez la grille, ouvrez Bob 1N2 depuis l'écran d'accueil, puis Grilles reçues › « Coller »."
+    ? "Un lien reçu s'ouvre toujours dans Safari. Si vous tenez le concours dans une icône de l'écran d'accueil qui s'ouvre hors de Safari (elle a sa propre mémoire) : copiez la grille, ouvrez-la, puis Grilles reçues › « Coller ». Mieux : passez le concours dans Safari (son accueil vous guide), et les grilles s'ouvriront directement."
     : "Si le concours est tenu ailleurs (l'app de l'écran d'accueil, un autre navigateur, un autre appareil) : copiez la grille et collez-la dans « Grilles reçues » de celui-là. Sinon, la journée a été supprimée : demandez au joueur de jouer la grille de la nouvelle journée.";
 
   // Joueur

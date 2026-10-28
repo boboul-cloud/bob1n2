@@ -15,7 +15,7 @@ import { NouvelleJourneeSheet } from './journees.js';
 import { PariEditeur } from './pari-editeur.js';
 import { JoueurFormulaire, AchatSheet } from './joueur-actions.js';
 import { MatchsDuCalendrierSheet } from './calendrier-vues.js';
-import { BoutonEcranDAccueil } from '../ui/installation.js';
+import { BoutonEcranDAccueil, CartePasserASafari } from '../ui/installation.js';
 
 export function AccueilView() {
   const etat = useEtat();
@@ -48,6 +48,7 @@ export function AccueilView() {
 
   return html`<${Ecran} titre=${titreAffiche()} actions=${actions}>
     <div class="acc-accueil">
+      <${CartePasserASafari} />
       ${journees.length === 0 && joueurs.length === 0
         ? html`<${PremiersPas} onJournee=${() => setCreationJournee(true)} onJoueur=${() => setCreationJoueur(true)} />`
         : html`

@@ -68,6 +68,29 @@
     $('alerte').hidden = false;
   }
 
+  // Les journées du concours tenu dans ce navigateur (la base de Bob 1N2, même site), sans jamais
+  // créer la base quand il n'y en a pas : le joueur, sur son téléphone, n'en a pas.
+  function journeesDuConcours() {
+    function secours() {
+      try { return ((JSON.parse(localStorage.getItem('bob1n2.etat') || 'null') || {}).journees) || []; } catch (e) { return []; }
+    }
+    return new Promise(function (resoudre) {
+      try {
+        var demande = indexedDB.open('bob1n2', 1);
+        demande.onupgradeneeded = function (e) { e.target.transaction.abort(); };
+        demande.onerror = function () { resoudre(secours()); };
+        demande.onsuccess = function () {
+          var base = demande.result;
+          try {
+            var lecture = base.transaction('donnees', 'readonly').objectStore('donnees').get('etat');
+            lecture.onsuccess = function () { base.close(); resoudre((lecture.result && lecture.result.journees) || []); };
+            lecture.onerror = function () { base.close(); resoudre(secours()); };
+          } catch (e) { base.close(); resoudre(secours()); }
+        };
+      } catch (e) { resoudre(secours()); }
+    });
+  }
+
   async function demarrer() {
     var code = G.codeDe(location.hash);
     if (!code) return alerte('Ce lien ne contient pas de grille : il a peut-être été coupé. Demandez au joueur de le renvoyer en entier.');
@@ -95,14 +118,23 @@
     var mise = tailles ? G.enPoints(jouee.m) + ' par combinaison, ' + G.enPoints(G.arrondi(jouee.m * combinaisons)) + ' en tout'
       : G.enPoints(jouee.m);
 
+    // Le concours de cette journée est tenu dans ce navigateur (le téléphone du bar) : la grille
+    // s'ouvre aussitôt dans Bob 1N2, comme l'app iPhone avec son lien bob1n2://.
+    var journees = await journeesDuConcours();
+    if (journees.some(function (j) { return j.reference && j.reference === jouee.j; })) {
+      location.replace('../#/grille/' + code);
+      return;
+    }
+    var concoursIci = journees.length > 0;
+
     $('qui').textContent = (jouee.p || 'Sans nom') + (jouee.no ? ' · n° ' + jouee.no : '');
     $('quoi').textContent = (jouee.n || 'Journée') + ' · ' + formule + ' · mise ' + mise + '.';
     // L'app est sur le même site : son adresse « #/grille/<code> » range la grille et l'ouvre.
     $('ouvrir').href = '../#/grille/' + code;
-    // iPhone, iPad : un lien s'ouvre toujours dans Safari, jamais dans l'app de l'écran d'accueil
-    // (qui a sa propre mémoire) : la copie vient en premier, avec le chemin jusqu'à « Coller ».
+    // iPhone, iPad, sans concours dans Safari : il est tenu dans une app de l'écran d'accueil ouverte
+    // hors de Safari (qui a sa propre mémoire) ; la copie vient en premier, jusqu'à « Coller ».
     var ua = navigator.userAgent;
-    if (/iPhone|iPad|iPod/.test(ua) || (ua.indexOf('Macintosh') >= 0 && navigator.maxTouchPoints > 1)) {
+    if (!concoursIci && (/iPhone|iPad|iPod/.test(ua) || (ua.indexOf('Macintosh') >= 0 && navigator.maxTouchPoints > 1))) {
       $('copier').textContent = 'Copier la grille';
       $('copier').className = 'bouton';
       $('ouvrir').className = 'bouton second';

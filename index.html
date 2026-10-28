@@ -11,6 +11,18 @@
   <meta name="apple-mobile-web-app-title" content="Bob 1N2">
   <title>Bob 1N2</title>
   <link rel="manifest" href="manifest.webmanifest">
+  <script>
+    // iPhone, iPad : l'icône de l'écran d'accueil ouvre Bob 1N2 dans Safari, avec sa mémoire. Une app
+    // web ouverte hors de Safari en aurait une à part, que les liens (grilles renvoyées par les
+    // joueurs, qui s'ouvrent toujours dans Safari) n'atteindraient pas.
+    (function () {
+      var ua = navigator.userAgent;
+      if (!/iPhone|iPad|iPod/.test(ua) && !(ua.indexOf('Macintosh') >= 0 && navigator.maxTouchPoints > 1)) return;
+      document.querySelector('link[rel="manifest"]').href = 'manifest-safari.webmanifest';
+      var capable = document.querySelector('meta[name="apple-mobile-web-app-capable"]');
+      if (capable) capable.remove();
+    })();
+  </script>
   <link rel="icon" type="image/png" sizes="32x32" href="icones/favicon-32.png">
   <link rel="apple-touch-icon" href="icones/icone-180.png">
   <link rel="stylesheet" href="css/app.css">
