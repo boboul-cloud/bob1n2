@@ -15,7 +15,7 @@ export const Site = {
   get assistance() { return new URL('assistance.html', base()).href; },
   get confidentialite() { return new URL('confidentialite.html', base()).href; },
   get conditions() { return new URL('conditions.html', base()).href; },
-  version: '1.0 (web)',
+  version: '1.1 (web)',
   /** La boîte aux lettres des grilles jouées à distance (Cloudflare Pages + D1, dossier boite/ du projet).
    *  La même adresse est écrite dans partage/grille.js, pour la page du joueur. */
   boite: 'https://bob1n2-boite.pages.dev',
