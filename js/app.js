@@ -25,7 +25,20 @@ async function demarrer() {
 
   // Hors connexion : les fichiers de l'app sont gardés par le navigateur (sw.js).
   if ('serviceWorker' in navigator && location.protocol === 'https:' && !parametres.has('demo')) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    // Une nouvelle version prend la main (sw.js) : la page se recharge une fois, pour s'en servir.
+    const avaitUnGardien = !!navigator.serviceWorker.controller;
+    let recharge = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!avaitUnGardien || recharge) return;
+      recharge = true;
+      location.reload();
+    });
+    navigator.serviceWorker.register('sw.js').then((enregistrement) => {
+      // À chaque retour au premier plan (app de l'écran d'accueil laissée ouverte) : y a-t-il du neuf ?
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') enregistrement.update().catch(() => {});
+      });
+    }).catch(() => {});
   }
 }
 

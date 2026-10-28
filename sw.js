@@ -1,7 +1,7 @@
 // Fabriqué par Tools/sw-web.mjs : ne pas modifier à la main.
 // Garde les fichiers de Bob 1N2 pour qu'il marche sans connexion. Aucune donnée ne passe par ici :
 // joueurs, grilles et paris restent dans la base du navigateur (IndexedDB).
-const VERSION = 'bob1n2-e7856222df7c';
+const VERSION = 'bob1n2-c6cab5fceb5d';
 const FICHIERS = [
  "./",
  "jouer/",
@@ -90,8 +90,22 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const requete = e.request;
   if (requete.method !== 'GET' || new URL(requete.url).origin !== location.origin) return;
-  e.respondWith(caches.match(requete, { ignoreSearch: requete.mode === 'navigate' }).then((garde) => {
-    if (garde) return garde;
-    return fetch(requete).catch(() => (requete.mode === 'navigate' ? caches.match('./') : Response.error()));
-  }));
+  // D'abord le réseau : une version publiée s'applique dès l'ouverture. La copie gardée ne sert que
+  // sans connexion (ou si le réseau tarde plus de 4 secondes).
+  e.respondWith((async () => {
+    const cache = await caches.open(VERSION);
+    const garde = () => caches.match(requete, { ignoreSearch: requete.mode === 'navigate' })
+      .then((r) => r ?? (requete.mode === 'navigate' ? caches.match('./') : undefined));
+    try {
+      // « no-cache » : le fichier est revérifié auprès du site (le cache HTTP de GitHub dure 10 min).
+      const reseau = fetch(requete.url, { cache: 'no-cache', credentials: 'same-origin' }).then((reponse) => {
+        if (reponse.ok) cache.put(requete, reponse.clone());
+        return reponse;
+      });
+      const delai = new Promise((_, refuser) => setTimeout(() => refuser(new Error('lent')), 4000));
+      return await Promise.race([reseau, delai]);
+    } catch {
+      return (await garde()) ?? Response.error();
+    }
+  })());
 });
