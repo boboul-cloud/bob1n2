@@ -37,6 +37,8 @@
     ou de l'iPad garde ses données à part, et chaque navigateur a les siennes) : copiez le lien, puis
     dans Bob 1N2 › Grilles reçues, touchez « Coller ». Vous choisirez le joueur et vérifierez la mise
     avant de valider.</p>
+    <p class="aide" id="aide-boite" hidden>Si le joueur a touché « Envoyer au bar », sa grille est déjà dans
+    Bob 1N2 › Grilles reçues : ouvrez simplement l'app. Sinon :</p>
     <ol class="aide" id="aide-ios" hidden>
       <li>« Copier la grille ».</li>
       <li>Ouvrez Bob 1N2 depuis l'écran d'accueil.</li>
@@ -142,6 +144,7 @@
       $('copier').parentNode.insertBefore($('copier'), $('ouvrir'));
       $('aide-autres').hidden = true;
       $('aide-ios').hidden = false;
+      $('aide-boite').hidden = false;
       $('aide-ios-safari').hidden = false;
     }
     $('copier').addEventListener('click', async function () {

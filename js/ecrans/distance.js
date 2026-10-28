@@ -25,6 +25,8 @@ import { copier, estAppareilMobile, estIOS, lirePressePapiers, ouvrirSMS, partag
 import { estInstallee } from '../ui/installation.js';
 import { Site } from '../site.js';
 import { svgQR } from '../qr.js';
+import { boiteActuelle, derniereReleve, preparerBoite, relever } from '../boite.js';
+import { ecouter } from '../ui/evenements.js';
 import { imprimerAffichette } from './imprimables.js';
 
 /** « Voir la page du joueur » : la page s'ouvre à la place de l'app, en aperçu (« ?apercu » avant
@@ -88,15 +90,16 @@ export function EnvoiGrilleSheet({ journeeId, onFermer }) {
   const numeroBar = numeroSMS(r.telephoneBar);
 
   // Les références de la journée et de ses matchs, données une fois pour toutes avant le premier envoi.
-  const [pret, setPret] = useState(() => !!journee && !D.manqueReferences(journee));
+  // Et la boîte aux lettres du concours, où la page du joueur dépose sa grille (boite.js).
+  const [pret, setPret] = useState(() => !!journee && !D.manqueReferences(journee) && !!boiteActuelle());
   useEffect(() => {
     if (journee && D.manqueReferences(journee)) modifier(() => D.attribuerReferences(journee));
-    setPret(true);
+    preparerBoite().catch(() => null).finally(() => setPret(true));
   }, []);
 
   // Le lien est refait quand le téléphone du bar change (il y est écrit).
   const lien = useMemo(() => (pret && journee
-    ? D.lien(journee, { titreJeu: titreAffiche(), mise: r.miseParDefaut, telephone: r.telephoneBar })
+    ? D.lien(journee, { titreJeu: titreAffiche(), mise: r.miseParDefaut, telephone: r.telephoneBar, boite: boiteActuelle() })
     : null), [pret, numeroBar]);
 
   const [qr, setQr] = useState(null);
@@ -321,6 +324,18 @@ export function GrillesRecuesView() {
     recevoir(texte);
   };
 
+  // La boîte aux lettres : relevée toute seule ; on peut aussi la relever à la main.
+  const [releve, setReleve] = useState(derniereReleve);
+  const [releveEnCours, setReleveEnCours] = useState(false);
+  useEffect(() => ecouter('boiteRelevee', (r) => setReleve({ ...r })), []);
+  useEffect(() => { relever(); }, []);
+  const releverMaintenant = async () => {
+    setReleveEnCours(true);
+    await relever({ discret: false });
+    setReleveEnCours(false);
+  };
+  const avecBoite = !!etat.reglages.cleBoite;
+
   const effacerTraitees = () => modifier((e) => {
     e.grillesRecues = e.grillesRecues.filter((g) => g.statut === 'aValider');
   });
@@ -331,11 +346,19 @@ export function GrillesRecuesView() {
   return html`<${Ecran} titre="Grilles reçues" actions=${traitees.length > 0 && html`<${Menu} titre="Options" items=${[
     { libelle: 'Effacer les grilles traitées', icone: 'trash', destructif: true, onClick: effacerTraitees },
   ]} />`}>
-    <${Section} pied="« Coller » lit le lien ou le message reçu du joueur.">
+    ${avecBoite && html`<${Section} titre="Boîte aux lettres" pied=${releve?.ok === false
+        ? "Boîte injoignable pour le moment (pas de connexion ?) : elle sera relevée dès que possible. Les grilles y attendent 14 jours."
+        : "Les grilles que les joueurs envoient au bar arrivent ici toutes seules : la boîte est relevée à l'ouverture de l'app, puis toutes les minutes."}>
+      <${Ligne} action icone="tray.and.arrow.down" titre=${releveEnCours ? 'Relève en cours…' : 'Relever maintenant'}
+        detail=${releve?.date ? `relevée à ${releve.date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : null}
+        desactive=${releveEnCours} onClick=${releverMaintenant} />
+    <//>`}
+
+    <${Section} pied="« Coller » lit le lien ou le message reçu du joueur, s'il vous l'a envoyé par SMS ou WhatsApp.">
       <div class="dist-etapes">
         <div class="dist-etape"><span class="dist-numero">1</span><span>Dans une journée ouverte : « Envoyer la grille aux joueurs »</span></div>
-        <div class="dist-etape"><span class="dist-numero">2</span><span>Chaque joueur coche sa grille sur son téléphone et vous renvoie un lien</span></div>
-        <div class="dist-etape"><span class="dist-numero">3</span><span>Touchez ce lien, ou collez-le ici : choisissez le joueur, vérifiez la mise, validez</span></div>
+        <div class="dist-etape"><span class="dist-numero">2</span><span>Chaque joueur coche sa grille sur son téléphone et touche « Envoyer au bar »</span></div>
+        <div class="dist-etape"><span class="dist-numero">3</span><span>Elle arrive ici toute seule (ou touchez le lien reçu, ou collez-le) : choisissez le joueur, vérifiez la mise, validez</span></div>
       </div>
       <div class="dist-coller">
         <${Bouton} variante="principal" icone="doc.on.clipboard" onClick=${coller}>Coller<//>
@@ -480,7 +503,7 @@ export function GrilleRecueFiche({ grilleId, dejaRecue = false, onFermer }) {
     if (await copier(`${Site.recu}#${grille.code}`)) setGrilleCopiee(true);
   };
   const ailleurs = estIOS() && !estInstallee()
-    ? "Un lien reçu s'ouvre toujours dans Safari. Si vous tenez le concours dans une icône de l'écran d'accueil qui s'ouvre hors de Safari (elle a sa propre mémoire) : copiez la grille, ouvrez-la, puis Grilles reçues › « Coller ». Mieux : passez le concours dans Safari (son accueil vous guide), et les grilles s'ouvriront directement."
+    ? "Un lien reçu s'ouvre toujours dans Safari, et l'app de l'écran d'accueil a sa propre mémoire. Si vous y tenez le concours : copiez la grille, ouvrez l'app, puis Grilles reçues › « Coller ». Quand le joueur touche « Envoyer au bar », sa grille y arrive d'elle-même, sans lien."
     : "Si le concours est tenu ailleurs (l'app de l'écran d'accueil, un autre navigateur, un autre appareil) : copiez la grille et collez-la dans « Grilles reçues » de celui-là. Sinon, la journée a été supprimée : demandez au joueur de jouer la grille de la nouvelle journée.";
 
   // Joueur

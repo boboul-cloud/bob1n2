@@ -78,6 +78,7 @@
     <p id="d-consigne"></p>
     <p class="lien-brut" id="d-lien"></p>
     <div class="actions">
+      <button type="button" class="bouton" id="d-boite" hidden>Envoyer au bar</button>
       <a class="bouton" id="d-sms" hidden>Envoyer par SMS au bar</a>
       <a class="bouton whatsapp" id="d-whatsapp" hidden>Envoyer par WhatsApp</a>
       <button type="button" class="bouton" id="d-partager">Envoyer le lien…</button>
@@ -333,6 +334,7 @@
     jouee.u = etat.envoi.identifiant;
 
     var code = await G.coder(jouee);
+    etat.code = code;
     etat.lien = new URL('../recu/#' + code, location.href).href;
 
     var tailles = niveauxRetenus();
@@ -356,7 +358,38 @@
     $('d-partager').className = auBar ? 'bouton second' : 'bouton';
     $('d-partager').hidden = !navigator.share;
     $('d-copier').textContent = 'Copier le lien';
+    // La boîte aux lettres du concours : la grille arrive toute seule dans l'app du bar. Le SMS et
+    // WhatsApp restent, en second, pour qui n'a pas de connexion.
+    var boite = typeof grille.b === 'string' && /^[A-Za-z0-9_-]{22}$/.test(grille.b);
+    $('d-boite').hidden = !boite;
+    $('d-boite').disabled = false;
+    $('d-boite').textContent = 'Envoyer au bar';
+    if (boite) {
+      $('d-consigne').textContent = 'Touchez « Envoyer au bar » : votre grille arrive dans l\'app du barman. Votre pari compte quand il l\'a validé, aux cotes du moment.';
+      $('d-sms').className = 'bouton second';
+      $('d-whatsapp').className = 'bouton second';
+      $('d-partager').className = 'bouton second';
+      $('d-partager').textContent = 'Autre moyen…';
+    } else {
+      $('d-sms').className = 'bouton';
+      $('d-whatsapp').className = 'bouton whatsapp';
+    }
     $('dialogue').showModal();
+  }
+
+  async function envoyerAuBar() {
+    $('d-boite').disabled = true;
+    $('d-boite').textContent = 'Envoi…';
+    var ok = false;
+    try { ok = await G.deposer(etat.grille.b, etat.code); } catch (e) { ok = false; }
+    if (ok) {
+      $('d-boite').textContent = 'Grille envoyée au bar ✓';
+      $('d-consigne').textContent = 'Votre grille est arrivée au bar. Votre pari compte quand le barman l\'a validé, aux cotes du moment.';
+    } else {
+      $('d-boite').disabled = false;
+      $('d-boite').textContent = 'Réessayer';
+      $('d-consigne').textContent = 'Envoi impossible pour le moment (pas de connexion ?) : réessayez, ou envoyez votre grille par SMS ou WhatsApp.';
+    }
   }
 
   async function partager() {
@@ -399,6 +432,7 @@
     $('mise').addEventListener('blur', function () { $('mise').value = etat.mise; });
     $('numero').addEventListener('input', function () { $('numero').value = $('numero').value.replace(/\D/g, ''); });
     $('envoyer').addEventListener('click', envoyer);
+    $('d-boite').addEventListener('click', envoyerAuBar);
     $('d-partager').addEventListener('click', partager);
     $('d-copier').addEventListener('click', copier);
     $('d-fermer').addEventListener('click', function () { $('dialogue').close(); });

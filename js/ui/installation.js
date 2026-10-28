@@ -2,18 +2,15 @@
 //  - Chrome, Edge, Android : le navigateur propose lui-même l'installation (`beforeinstallprompt`),
 //    que le bouton déclenche ;
 //  - iPhone, iPad : aucune page ne peut le faire elle-même ; seul Partager › « Sur l'écran
-//    d'accueil » de Safari (ou de Chrome) l'ajoute : la feuille montre les gestes. L'icône ouvre
-//    Bob 1N2 dans Safari (manifest-safari.webmanifest), avec sa mémoire : les grilles renvoyées par
-//    les joueurs, dont le lien s'ouvre toujours dans Safari, arrivent ainsi directement dans le
-//    concours, comme avec le lien bob1n2:// de l'app iPhone. Une app ouverte hors de Safari (les
-//    icônes d'avant) a sa propre mémoire : `CartePasserASafari` aide à en sortir ;
-//  - Safari sur Mac : Fichier › « Ajouter au Dock… » (l'app du Dock a sa propre mémoire).
+//    d'accueil » de Safari (ou de Chrome) l'ajoute : la feuille montre les gestes. L'app ajoutée a sa
+//    propre mémoire, séparée de Safari : les données saisies dans Safari se reprennent par une
+//    sauvegarde. Les grilles jouées à distance l'atteignent par la boîte aux lettres (boite.js) ;
+//  - Safari sur Mac : Fichier › « Ajouter au Dock… » (l'app du Dock a aussi sa propre mémoire).
 
 import { html, useEffect, useState } from '../../vendor/preact-htm.js';
 import { lire, exporter } from '../store.js';
 import { Feuille, Section, Ligne, Bouton, Icone, Encadre } from './composants.js';
-import { copier, estIOS, telecharger } from './systeme.js';
-import { Site } from '../site.js';
+import { estIOS, telecharger } from './systeme.js';
 import { annoncer } from './dialogues.js';
 import { versChampDate } from '../format.js';
 
@@ -91,8 +88,8 @@ export function FeuilleEcranDAccueil({ onFermer, onDejaFait }) {
   const invite = useInvitation();
   const quelle = plateforme();
   const ios = quelle === 'ios-safari' || quelle === 'ios-autre';
-  // Sur Mac, l'app du Dock a sa propre mémoire ; sur iPhone et iPad, l'icône ouvre Safari.
-  const memoireAPart = quelle === 'mac-safari';
+  // L'app de l'écran d'accueil (iPhone, iPad) ou du Dock (Mac) a sa propre mémoire.
+  const memoireAPart = ios || quelle === 'mac-safari';
 
   const installer = async () => {
     if (!invitation) return;
@@ -124,10 +121,9 @@ export function FeuilleEcranDAccueil({ onFermer, onDejaFait }) {
     corps = html`<${Section} titre=${quelle === 'ios-safari' ? 'Dans Safari' : 'Dans votre navigateur'} nue>
       <ol class="inst-etapes">
         ${etape(1, html`Touchez Partager ${partager} : en bas de l'écran sur iPhone, en haut sur iPad${quelle === 'ios-autre' ? ' (dans Chrome, à droite de la barre d\'adresse)' : ''}.`)}
-        ${etape(2, html`Faites défiler, puis touchez « Sur l'écran d'accueil ». Si l'interrupteur « Ouvrir en tant qu'app web » apparaît, désactivez-le.`)}
-        ${etape(3, html`Touchez « Ajouter » : l'icône de Bob 1N2 rejoint vos apps.`)}
+        ${etape(2, html`Faites défiler, puis touchez « Sur l'écran d'accueil » (laissez « Ouvrir en tant qu'app web » activé s'il apparaît).`)}
+        ${etape(3, html`Touchez « Ajouter » : l'icône de Bob 1N2 rejoint vos apps. Elle s'ouvre comme une app, même sans connexion, et les grilles des joueurs y arrivent toutes seules.`)}
       </ol>
-      <p class="note" style="padding: 8px 4px 0">L'icône ouvre Bob 1N2 dans Safari, avec ses données : une grille renvoyée par un joueur s'ouvre directement dans le concours, d'un toucher sur son lien.</p>
     <//>`;
   } else if (quelle === 'mac-safari') {
     corps = html`<${Section} titre="Dans Safari" nue>
@@ -157,9 +153,10 @@ export function FeuilleEcranDAccueil({ onFermer, onDejaFait }) {
     ${corps}
     ${memoireAPart && html`<${Section} titre="Vos données" nue>
       <${Encadre} icone="exclamationmark.triangle" couleur="orange">
-        L'app du Dock a sa propre mémoire, séparée de Safari : les joueurs, journées et paris saisis ici n'y
-        seront pas. Pour les y retrouver : enregistrez une sauvegarde, puis, dans l'app du Dock, Réglages ›
-        Sauvegarde › « Restaurer une sauvegarde… ». Ensuite, tenez le concours toujours dans l'app du Dock.
+        L'app ${ios ? "de l'écran d'accueil" : 'du Dock'} a sa propre mémoire, séparée de Safari : les joueurs,
+        journées et paris saisis ici n'y seront pas. Pour les y retrouver : enregistrez une sauvegarde, puis,
+        dans l'app, Réglages › Sauvegarde › « Restaurer une sauvegarde… ». Ensuite, tenez le concours
+        toujours dans l'app.
       <//>
       ${aDesDonnees() && html`<div style="margin-top:12px">
         <${Bouton} bloc icone="square.and.arrow.down" onClick=${sauvegarder}>Enregistrer une sauvegarde<//>
@@ -180,38 +177,3 @@ export function FeuilleEcranDAccueil({ onFermer, onDejaFait }) {
   <//>`;
 }
 
-/**
- * iPhone, iPad, dans une app de l'écran d'accueil ouverte hors de Safari (les icônes d'avant) : sa
- * mémoire est à part, et les grilles renvoyées par les joueurs (leur lien s'ouvre dans Safari) ne
- * l'atteignent qu'en copiant-collant. La carte guide le passage, une fois, vers Safari.
- */
-export function CartePasserASafari() {
-  const [copie, setCopie] = useState(false);
-  if (!(estIOS() && estInstallee())) return null;
-  const sauvegarder = () => {
-    telecharger(`Bob 1N2 – sauvegarde ${versChampDate(new Date())}.json`, exporter());
-  };
-  const copierAdresse = async () => { if (await copier(Site.accueil)) setCopie(true); };
-  const etape = (n, contenu) => html`<li class="inst-etape"><span class="inst-numero">${n}</span><span>${contenu}</span></li>`;
-  return html`<div class="carte">
-    <div class="carte-titre"><${Icone} nom="safari" taille=${18} classe="accent" /><span>Recevoir les grilles d'un toucher</span></div>
-    <p style="margin-bottom:10px">Cette icône ouvre Bob 1N2 hors de Safari, avec sa propre mémoire : les grilles renvoyées
-      par les joueurs s'ouvrent dans Safari et ne vous arrivent ici qu'en copiant-collant. Passez le concours dans
-      Safari, une fois pour toutes : une grille s'ouvrira alors directement, comme dans l'app iPhone.</p>
-    <ol class="inst-etapes" style="padding: 0; background: none">
-      ${etape(1, html`« Enregistrer une sauvegarde » ci-dessous (« Enregistrer dans Fichiers »).`)}
-      ${etape(2, html`Dans Safari, ouvrez l'adresse de Bob 1N2 (« Copier l'adresse »), puis Réglages › Sauvegarde › « Restaurer une sauvegarde… ».`)}
-      ${etape(3, html`Supprimez cette icône (appui long › « Supprimer le signet »), puis, dans Safari, en bas de l'accueil : « Sur l'écran d'accueil ».`)}
-    </ol>
-    <div class="pile" style="margin-top:14px; gap:8px">
-      <${Bouton} bloc variante="principal" icone="square.and.arrow.down" onClick=${sauvegarder}>Enregistrer une sauvegarde<//>
-      <${Bouton} bloc icone=${copie ? 'checkmark' : 'doc.on.doc'} onClick=${copierAdresse}>${copie ? 'Adresse copiée' : "Copier l'adresse"}<//>
-    </div>
-    <style>
-      .inst-etapes { list-style: none; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-      .inst-etape { display: flex; gap: 10px; align-items: baseline; line-height: 1.45; }
-      .inst-numero { flex: none; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
-        background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; transform: translateY(-1px); }
-    </style>
-  </div>`;
-}

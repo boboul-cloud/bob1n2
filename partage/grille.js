@@ -198,7 +198,20 @@
     return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
 
+  /** La boîte aux lettres des grilles (dossier boite/ du projet) : la même adresse est dans js/site.js. */
+  var BOITE = 'https://bob1n2-boite.pages.dev';
+
+  /** Dépose la grille jouée dans la boîte du concours (« b » de la grille) ; rend vrai si elle y est.
+   *  Texte simple, sans en-tête particulier : le navigateur n'a pas de demande préalable à faire. */
+  async function deposer(boite, code) {
+    var reponse = await fetch(BOITE + '/b/' + encodeURIComponent(boite), {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: JSON.stringify({ code: code })
+    });
+    return reponse.ok;
+  }
+
   racine.CodeGrille = {
+    BOITE: BOITE, deposer: deposer,
     VERSION: VERSION, SYSTEME_MIN: SYSTEME_MIN, SYSTEME_MAX: SYSTEME_MAX,
     coder: coder, decoder: decoder, codeDe: codeDe, morceaux: morceaux,
     arrondi: arrondi, combinaisons: combinaisons, nombreDeCombinaisons: nombreDeCombinaisons,

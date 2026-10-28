@@ -31,4 +31,9 @@ export const REGLAGES_PAR_DEFAUT = {
   /** Version web : identifiant de la clé d'accès (Face ID, Touch ID…) qui permet d'effacer un
    *  code oublié, s'il en a été créé une. */
   cleCodeOublie: '',
+  /** La boîte aux lettres du concours (boite.js) : sa clé, tirée au hasard au premier envoi d'une
+   *  grille, qui seule permet de la relever, et son adresse (l'empreinte de la clé), écrite dans le
+   *  lien des grilles. Une sauvegarde les emporte : restaurée ailleurs, la boîte suit. */
+  cleBoite: '',
+  boite: '',
 };

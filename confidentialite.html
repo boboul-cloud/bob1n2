@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Politique de confidentialité — Bob 1N2</title>
-<meta name="description" content="Bob 1N2 ne collecte aucune donnée : pas de compte, pas de publicité, pas de traqueur. Joueurs, grilles et paris restent dans votre navigateur.">
+<meta name="description" content="Bob 1N2 : pas de compte, pas de publicité, pas de traqueur. Joueurs, grilles et paris restent dans votre navigateur ; seules les grilles envoyées au bar transitent par sa boîte aux lettres.">
 <link rel="icon" type="image/png" href="icones/favicon-32.png">
 <link rel="apple-touch-icon" href="icones/icone-180.png">
 <link rel="stylesheet" href="partage/style.css">
@@ -23,14 +23,15 @@
   </div>
 </header>
 <main class="dedans">
-  <p class="date">Dernière mise à jour : 26 octobre 2026 · Version 1.0 (web)</p>
+  <p class="date">Dernière mise à jour : 28 octobre 2026 · Version 1.0 (web)</p>
 
   <div class="encadre">
     <h3>En une phrase</h3>
-    <p><strong>Bob 1N2 ne collecte, ne transmet et ne conserve chez nous aucune donnée.</strong>
-    Il n'y a ni compte, ni publicité, ni traqueur, ni statistique d'usage. Les joueurs, les grilles et
-    les paris restent dans votre navigateur, sur votre appareil : l'application ne télécharge que ses
-    propres fichiers, depuis le site qui l'héberge, et n'envoie rien.</p>
+    <p><strong>Bob 1N2 ne collecte aucune donnée sur vous.</strong> Il n'y a ni compte, ni publicité,
+    ni traqueur, ni statistique d'usage. Les joueurs, les grilles et les paris restent dans votre
+    navigateur, sur votre appareil. Une seule chose passe par un serveur : la grille qu'un joueur envoie
+    au bar avec « Envoyer au bar », déposée dans la boîte aux lettres du concours le temps que
+    l'application du bar la relève, puis effacée.</p>
   </div>
 
   <h2>Qui édite l'application</h2>
@@ -45,9 +46,11 @@
     <li>Aucun accès à la position, aux photos, au calendrier, au micro ou à l'appareil photo ; pour le
     téléphone d'un joueur, le sélecteur de contacts du navigateur, là où il existe, ne transmet que le
     contact que vous choisissez</li>
-    <li>Aucun envoi : l'application ne transmet vos données à personne (seuls partent les documents et
-    les liens que vous partagez vous-même), et nous n'avons aucun serveur qui les recevrait</li>
-    <li>Aucun partage avec un tiers, puisque rien n'est collecté</li>
+    <li>Aucun envoi de vos joueurs, journées, paris ou réglages : ils ne quittent pas votre appareil
+    (seuls partent les documents et les liens que vous partagez vous-même, et les grilles jouées
+    décrites plus bas)</li>
+    <li>Aucune vente ni aucun partage : la boîte aux lettres est hébergée par Cloudflare, prestataire
+    technique, qui n'en exploite pas le contenu</li>
   </ul>
 
   <h2>Ce qui est enregistré sur votre appareil</h2>
@@ -95,11 +98,19 @@
   (titre de la journée, matchs, cotes) est écrite dans la partie du lien qui suit le signe « # », que les
   navigateurs n'envoient jamais au site. La page s'affiche sur le téléphone du joueur, qui y tape son
   nom, s'il le veut son numéro de joueur, et ses pronostics : tout reste dans son navigateur, qui retient
-  seulement son nom et son numéro pour la fois suivante. « Envoyer ma grille » fabrique à son tour un
-  lien, que le joueur envoie lui-même, par le moyen de son choix (SMS, messagerie…). Nous n'avons aucun
-  serveur : ni la grille, ni le nom du joueur, ni ses pronostics ne nous parviennent. Le site qui
-  héberge ces pages reçoit seulement la demande de la page, sans ce qui suit le « # », comme pour toute
-  visite.</p>
+  seulement son nom et son numéro pour la fois suivante. Le site qui héberge ces pages reçoit seulement
+  la demande de la page, sans ce qui suit le « # », comme pour toute visite.</p>
+  <h3>La boîte aux lettres du concours</h3>
+  <p>« Envoyer au bar » dépose la grille jouée dans la boîte aux lettres du concours : un petit service
+  de Bob 1N2 hébergé par Cloudflare (Cloudflare Pages, base de données en Europe de l'Ouest). Y
+  transitent le nom que le joueur a tapé, son numéro de joueur s'il l'a donné, ses pronostics, sa mise
+  et les références de la journée et des matchs. Chaque concours a sa boîte, à une adresse tirée au
+  hasard ; seule l'application du bar, qui en détient la clé, peut la relever. Une grille est effacée
+  dès que l'application l'a relevée, et au plus tard 14 jours après son dépôt si elle ne l'est jamais.
+  Le service ne garde ni adresse IP, ni compte, ni autre trace ; Cloudflare peut tenir des journaux
+  techniques pour la sécurité de son réseau.</p>
+  <p>Le joueur peut aussi envoyer sa grille sans la boîte : « Envoyer ma grille » fabrique un lien, qu'il
+  envoie lui-même, par SMS, WhatsApp ou tout autre moyen ; rien ne passe alors par nous.</p>
   <p>Si vous indiquez le téléphone du bar, il est écrit dans le lien de la grille, pour que la page
   prépare le message de retour : quiconque a ce lien, ou scanne l'affichette, peut le lire. La page
   ouvre alors l'application de messages ou WhatsApp sur le téléphone du joueur, et c'est lui qui

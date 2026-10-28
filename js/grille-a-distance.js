@@ -53,7 +53,8 @@ export const Erreur = {
 //
 // Grille (ce qui part) : { version, titreJeu, journee (référence), titre, date « 2026-10-03 »,
 //   mise, groupes: [{ categorie, matchs: [{ reference, domicile, exterieur, cotes: [1, N, 2 en centièmes] }] }],
-//   telephone (facultatif : le téléphone du bar, où la page adresse le retour) }
+//   telephone (facultatif : le téléphone du bar, où la page adresse le retour),
+//   boite (facultative : la boîte aux lettres du concours, où la page dépose la grille jouée) }
 // Jouee (ce qui revient) : { version, journee, titre, identifiant (tiré par la page à chaque envoi),
 //   nom, numero (facultatif), formule « c » / « s », niveaux (facultatif), mise (par combinaison
 //   en système), choix: [{ match (référence), issue « 1 » / « N » / « 2 », cote (vue, en centièmes) }] }
@@ -80,11 +81,13 @@ export const FORMATS = {
         })),
       };
       if (!absent(g.telephone)) json.tel = g.telephone;
+      if (!absent(g.boite)) json.b = g.boite;
       return json;
     },
     depuisJSON(o) {
       exiger(estObjet(o) && estEntier(o.v) && estTexte(o.t) && estTexte(o.j) && estTexte(o.n)
-        && estTexte(o.d) && estEntier(o.m) && Array.isArray(o.g) && (absent(o.tel) || estTexte(o.tel)));
+        && estTexte(o.d) && estEntier(o.m) && Array.isArray(o.g) && (absent(o.tel) || estTexte(o.tel))
+        && (absent(o.b) || estTexte(o.b)));
       return {
         version: o.v, titreJeu: o.t, journee: o.j, titre: o.n, date: o.d, mise: o.m,
         groupes: o.g.map((groupe) => {
@@ -99,6 +102,7 @@ export const FORMATS = {
           };
         }),
         telephone: absent(o.tel) ? null : o.tel,
+        boite: absent(o.b) ? null : o.b,
       };
     },
   },
@@ -141,10 +145,10 @@ export const FORMATS = {
 
 /** Le lien à envoyer aux joueurs pour cette journée (objet ou id), avec le téléphone du bar s'il est
  *  réglé. Donne leur référence à la journée et aux matchs qui n'en ont pas : dans `modifier`. */
-export function lien(journee, { titreJeu, mise, telephone = null }) {
+export function lien(journee, { titreJeu, mise, telephone = null, boite = null }) {
   let code = '';
   try {
-    code = coder(grille(journee, { titreJeu, mise, telephone }), 'grille');
+    code = coder(grille(journee, { titreJeu, mise, telephone, boite }), 'grille');
   } catch { /* lien sans grille, comme le `?? ""` du Swift */ }
   return `${Site.jouer}#${code}`;
 }
@@ -172,7 +176,7 @@ export function message({ titreJeu, journee, lien: adresse = null, prenom = null
 
 /** La grille envoyée : les matchs sans résultat, groupés comme dans l'app.
  *  Donne d'abord leur référence à la journée et aux matchs qui n'en ont pas. */
-export function grille(journee, { titreJeu, mise, telephone = null }) {
+export function grille(journee, { titreJeu, mise, telephone = null, boite = null }) {
   const j = journeeDe(journee);
   attribuerReferences(j);
   const groupes = M.groupes(j.id).map((groupe) => {
@@ -184,7 +188,7 @@ export function grille(journee, { titreJeu, mise, telephone = null }) {
   }).filter(Boolean);
   return {
     version: VERSION, titreJeu, journee: j.reference, titre: j.titre, date: versChampDate(j.date),
-    mise: Math.max(1, Math.round(mise)), groupes, telephone: numeroSMS(telephone),
+    mise: Math.max(1, Math.round(mise)), groupes, telephone: numeroSMS(telephone), boite: boite || null,
   };
 }
 

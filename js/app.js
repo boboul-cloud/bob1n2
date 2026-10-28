@@ -16,6 +16,13 @@ async function demarrer() {
   }
   render(html`<${Racine} />`, document.getElementById('app'));
 
+  // Les grilles jouées à distance arrivent toutes seules : la boîte aux lettres du concours est
+  // relevée à l'ouverture, puis régulièrement (boite.js). Rien en démonstration.
+  if (!parametres.has('demo')) {
+    const { demarrerReleves } = await import('./boite.js');
+    demarrerReleves();
+  }
+
   // Hors connexion : les fichiers de l'app sont gardés par le navigateur (sw.js).
   if ('serviceWorker' in navigator && location.protocol === 'https:' && !parametres.has('demo')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
