@@ -202,10 +202,11 @@
   var BOITE = 'https://bob1n2-boite.pages.dev';
 
   /** Dépose la grille jouée dans la boîte du concours (« b » de la grille) ; rend vrai si elle y est.
+   *  `resume` (qui, quelle journée, quelle formule) est le texte de la notification du bar.
    *  Texte simple, sans en-tête particulier : le navigateur n'a pas de demande préalable à faire. */
-  async function deposer(boite, code) {
+  async function deposer(boite, code, resume) {
     var reponse = await fetch(BOITE + '/b/' + encodeURIComponent(boite), {
-      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: JSON.stringify({ code: code })
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: JSON.stringify({ code: code, resume: resume || '' })
     });
     return reponse.ok;
   }

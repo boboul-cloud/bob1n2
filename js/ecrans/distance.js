@@ -26,6 +26,7 @@ import { estInstallee } from '../ui/installation.js';
 import { Site } from '../site.js';
 import { svgQR } from '../qr.js';
 import { boiteActuelle, derniereReleve, preparerBoite, relever } from '../boite.js';
+import { activerNotifications, desactiverNotifications, etatNotifications } from '../notifications.js';
 import { ecouter } from '../ui/evenements.js';
 import { imprimerAffichette } from './imprimables.js';
 
@@ -348,10 +349,11 @@ export function GrillesRecuesView() {
   ]} />`}>
     ${avecBoite && html`<${Section} titre="Boîte aux lettres" pied=${releve?.ok === false
         ? "Boîte injoignable pour le moment (pas de connexion ?) : elle sera relevée dès que possible. Les grilles y attendent 14 jours."
-        : "Les grilles que les joueurs envoient au bar arrivent ici toutes seules : la boîte est relevée à l'ouverture de l'app, puis toutes les minutes."}>
+        : "Les grilles que les joueurs envoient au bar arrivent ici toutes seules : la boîte est relevée à l'ouverture de l'app, puis toutes les minutes. Avec les notifications, cet appareil est prévenu dès qu'un joueur envoie sa grille, même l'app fermée."}>
       <${Ligne} action icone="tray.and.arrow.down" titre=${releveEnCours ? 'Relève en cours…' : 'Relever maintenant'}
         detail=${releve?.date ? `relevée à ${releve.date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : null}
         desactive=${releveEnCours} onClick=${releverMaintenant} />
+      <${LigneNotifications} />
     <//>`}
 
     <${Section} pied="« Coller » lit le lien ou le message reçu du joueur, s'il vous l'a envoyé par SMS ou WhatsApp.">
@@ -390,6 +392,65 @@ export function GrillesRecuesView() {
 const COULEUR_STATUT = { aValider: 'var(--orange)', validee: 'var(--vert)', refusee: 'var(--texte-2)' };
 
 /** Une ligne de « Grilles reçues » : qui l'a envoyée, pour quelle journée, où elle en est. */
+/** Activer ou couper les notifications de la boîte sur cet appareil (notifications.js). */
+function LigneNotifications() {
+  const [etat, setEtat] = useState(null);
+  const [enCours, setEnCours] = useState(false);
+  useEffect(() => { etatNotifications().then(setEtat); }, []);
+
+  const activer = async () => {
+    setEnCours(true);
+    try {
+      const resultat = await activerNotifications();
+      setEtat(resultat.etat);
+      if (resultat.etat === 'refusees') {
+        alerte('Notifications refusées', "Pour les recevoir, autorisez-les dans les réglages de l'appareil (Notifications › Bob 1N2), puis revenez ici.");
+      } else if (resultat.etat === 'actives') {
+        annoncer(resultat.essai ? 'Notifications activées : une notification d\'essai arrive' : 'Notifications activées');
+      }
+    } catch (erreur) {
+      alerte('Notifications impossibles', erreur?.message ?? String(erreur));
+      setEtat(await etatNotifications());
+    }
+    setEnCours(false);
+  };
+
+  const desactiver = async () => {
+    const oui = await confirmer({
+      titre: 'Couper les notifications ?',
+      message: "Cet appareil ne sera plus prévenu. Les grilles envoyées au bar arriveront toujours ici.",
+      bouton: 'Couper',
+    });
+    if (!oui) return;
+    setEnCours(true);
+    await desactiverNotifications().catch(() => {});
+    setEtat(await etatNotifications());
+    setEnCours(false);
+  };
+
+  if (etat === 'actives') {
+    return html`<${Ligne} action icone="bell" titre="Notifications activées" detail=${enCours ? '…' : 'Couper'}
+      desactive=${enCours} onClick=${desactiver} />`;
+  }
+  if (etat === 'inactives') {
+    return html`<${Ligne} action icone="bell" titre=${enCours ? 'Activation…' : 'Activer les notifications'}
+      desactive=${enCours} onClick=${activer} />`;
+  }
+  if (etat === 'refusees') {
+    return html`<${Ligne} icone="bell.slash" titre="Notifications refusées"
+      sousTitre="Autorisez-les dans les réglages de l'appareil (Notifications › Bob 1N2)." />`;
+  }
+  if (etat === 'ecranAccueil') {
+    return html`<${Ligne} icone="bell" titre="Notifications"
+      sousTitre="Sur iPhone et iPad, dans l'app ajoutée à l'écran d'accueil seulement (bouton « Sur l'écran d'accueil » de la page d'accueil)." />`;
+  }
+  if (etat === 'impossibles' && !modeDemo) {
+    return html`<${Ligne} icone="bell.slash" titre="Notifications"
+      sousTitre=${estIOS() ? 'Il faut iOS 16.4 ou plus (Réglages › Général › Mise à jour logicielle).' : 'Ce navigateur ne reçoit pas de notifications.'} />`;
+  }
+  return null;
+}
+
 function LigneGrilleRecue({ grille, journees, onClick }) {
   const jouee = D.contenu(grille);
   const statut = M.STATUTS_GRILLE_RECUE[grille.statut] ?? M.STATUTS_GRILLE_RECUE.aValider;

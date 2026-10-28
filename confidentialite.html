@@ -31,7 +31,8 @@
     ni traqueur, ni statistique d'usage. Les joueurs, les grilles et les paris restent dans votre
     navigateur, sur votre appareil. Une seule chose passe par un serveur : la grille qu'un joueur envoie
     au bar avec « Envoyer au bar », déposée dans la boîte aux lettres du concours le temps que
-    l'application du bar la relève, puis effacée.</p>
+    l'application du bar la relève, puis effacée (et, si le bar les a activées, la notification qui
+    l'annonce).</p>
   </div>
 
   <h2>Qui édite l'application</h2>
@@ -109,6 +110,15 @@
   dès que l'application l'a relevée, et au plus tard 14 jours après son dépôt si elle ne l'est jamais.
   Le service ne garde ni adresse IP, ni compte, ni autre trace ; Cloudflare peut tenir des journaux
   techniques pour la sécurité de son réseau.</p>
+  <h3>Les notifications du bar</h3>
+  <p>Sur l'appareil du bar qui les active (« Activer les notifications », dans Grilles reçues), le
+  navigateur donne une adresse de notification, ouverte chez le service de notification de son
+  éditeur (Apple, Google, Mozilla ou Microsoft) ; la boîte aux lettres la garde avec la boîte du
+  concours. À chaque grille déposée, elle y envoie un court message (le nom tapé par le joueur, la
+  journée et la formule jouée) chiffré pour cet appareil seul : le service de notification le
+  transmet sans pouvoir le lire. Cette adresse est effacée quand vous coupez les notifications, quand
+  le service de notification la dit périmée, ou 90 jours après la dernière ouverture de l'application
+  sur cet appareil. Les joueurs, eux, ne reçoivent aucune notification et n'en activent aucune.</p>
   <p>Le joueur peut aussi envoyer sa grille sans la boîte : « Envoyer ma grille » fabrique un lien, qu'il
   envoie lui-même, par SMS, WhatsApp ou tout autre moyen ; rien ne passe alors par nous.</p>
   <p>Si vous indiquez le téléphone du bar, il est écrit dans le lien de la grille, pour que la page

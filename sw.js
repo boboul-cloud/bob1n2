@@ -1,7 +1,7 @@
 // Fabriqué par Tools/sw-web.mjs : ne pas modifier à la main.
 // Garde les fichiers de Bob 1N2 pour qu'il marche sans connexion. Aucune donnée ne passe par ici :
 // joueurs, grilles et paris restent dans la base du navigateur (IndexedDB).
-const VERSION = 'bob1n2-195ee98479f8';
+const VERSION = 'bob1n2-70fd8b7c20f8';
 const FICHIERS = [
  "./",
  "jouer/",
@@ -49,6 +49,7 @@ const FICHIERS = [
  "js/grille.js",
  "js/mode-emploi-texte.js",
  "js/modele.js",
+ "js/notifications.js",
  "js/pdf-calendrier.js",
  "js/qr.js",
  "js/reglages-defaut.js",
@@ -107,5 +108,40 @@ self.addEventListener('fetch', (e) => {
     } catch {
       return (await garde()) ?? Response.error();
     }
+  })());
+});
+
+// Les notifications de la boîte aux lettres (js/notifications.js, boite/) : un joueur a envoyé sa
+// grille au bar. Le message ne dit que qui, quelle journée et quelle formule ; la grille elle-même
+// arrive par la relève de la boîte.
+self.addEventListener('push', (e) => {
+  let message = {};
+  try {
+    message = e.data ? e.data.json() : {};
+  } catch {
+    message = {};
+  }
+  e.waitUntil((async () => {
+    await self.registration.showNotification(message.titre || 'Grille reçue', {
+      body: message.texte || "Un joueur vient d'envoyer sa grille.",
+      icon: 'icones/icone-192.png',
+      data: { ecran: '#/grilles' },
+    });
+    // L'app ouverte relève sa boîte tout de suite.
+    for (const fenetre of await self.clients.matchAll({ type: 'window' })) fenetre.postMessage({ type: 'grilleRecue' });
+  })());
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const ecran = e.notification.data?.ecran || '#/grilles';
+  e.waitUntil((async () => {
+    const fenetres = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const ouverte = fenetres.find((f) => f.url.startsWith(self.registration.scope));
+    if (ouverte) {
+      ouverte.postMessage({ type: 'ouvrir', ecran });
+      return ouverte.focus();
+    }
+    return self.clients.openWindow(new URL(ecran, self.registration.scope).href);
   })());
 });

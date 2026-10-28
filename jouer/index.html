@@ -340,7 +340,9 @@
     var tailles = niveauxRetenus();
     var combinaisons = G.nombreDeCombinaisons(n, tailles);
     var formule = tailles ? G.nomSysteme(n, tailles) + ' · ' + combinaisons + ' combinaisons' : (n > 1 ? 'Combiné · ' + n + ' matchs' : 'Simple · 1 match');
-    $('d-resume').textContent = nom + ' · ' + grille.n + ' · ' + formule + ' · mise totale ' + G.enPoints(G.arrondi(etat.mise * combinaisons)) + '.';
+    // Le résumé est aussi le texte de la notification du bar (« Pierre Dupont · Journée 6 · Combiné · 3 matchs »).
+    etat.resume = nom + ' · ' + grille.n + ' · ' + formule;
+    $('d-resume').textContent = etat.resume + ' · mise totale ' + G.enPoints(G.arrondi(etat.mise * combinaisons)) + '.';
     $('d-lien').textContent = etat.lien;
     // Le numéro du bar est dans la grille : le message de retour lui est déjà adressé.
     var texte = 'Ma grille pour ' + grille.n + ' (' + nom + ') :\n' + etat.lien;
@@ -381,7 +383,7 @@
     $('d-boite').disabled = true;
     $('d-boite').textContent = 'Envoi…';
     var ok = false;
-    try { ok = await G.deposer(etat.grille.b, etat.code); } catch (e) { ok = false; }
+    try { ok = await G.deposer(etat.grille.b, etat.code, etat.resume); } catch (e) { ok = false; }
     if (ok) {
       $('d-boite').textContent = 'Grille envoyée au bar ✓';
       $('d-consigne').textContent = 'Votre grille est arrivée au bar. Votre pari compte quand le barman l\'a validé, aux cotes du moment.';

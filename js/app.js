@@ -21,6 +21,9 @@ async function demarrer() {
   if (!parametres.has('demo')) {
     const { demarrerReleves } = await import('./boite.js');
     demarrerReleves();
+    // Et l'appareil du bar qui a activé les notifications est prévenu de chaque grille (notifications.js).
+    const { demarrerNotifications } = await import('./notifications.js');
+    demarrerNotifications();
   }
 
   // Hors connexion : les fichiers de l'app sont gardés par le navigateur (sw.js).
