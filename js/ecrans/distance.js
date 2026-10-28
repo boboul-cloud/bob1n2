@@ -21,7 +21,9 @@ import {
   Ligne, LigneValeur, Menu, PastilleNumero, Section, Vide,
 } from '../ui/composants.js';
 import { alerte, annoncer, confirmer, demanderCode } from '../ui/dialogues.js';
-import { copier, estAppareilMobile, lirePressePapiers, ouvrirSMS, partager } from '../ui/systeme.js';
+import { copier, estAppareilMobile, estIOS, lirePressePapiers, ouvrirSMS, partager } from '../ui/systeme.js';
+import { estInstallee } from '../ui/installation.js';
+import { Site } from '../site.js';
 import { svgQR } from '../qr.js';
 import { imprimerAffichette } from './imprimables.js';
 
@@ -471,6 +473,16 @@ export function GrilleRecueFiche({ grilleId, dejaRecue = false, onFermer }) {
     modifier((e) => { e.grillesRecues = e.grillesRecues.filter((g) => g.id !== grille.id); });
   };
 
+  // La journée n'est pas dans cette app : souvent, sur iPhone, la grille s'est ouverte dans Safari
+  // alors que le concours est tenu dans l'app de l'écran d'accueil, qui a sa propre mémoire.
+  const [grilleCopiee, setGrilleCopiee] = useState(false);
+  const copierGrille = async () => {
+    if (await copier(`${Site.recu}#${grille.code}`)) setGrilleCopiee(true);
+  };
+  const ailleurs = estIOS() && !estInstallee()
+    ? "Sur iPhone et iPad, l'app ajoutée à l'écran d'accueil a sa propre mémoire, séparée de Safari, et un lien reçu s'ouvre toujours dans Safari. Si vous tenez le concours dans l'app de l'écran d'accueil : copiez la grille, ouvrez Bob 1N2 depuis l'écran d'accueil, puis Grilles reçues › « Coller »."
+    : "Si le concours est tenu ailleurs (l'app de l'écran d'accueil, un autre navigateur, un autre appareil) : copiez la grille et collez-la dans « Grilles reçues » de celui-là. Sinon, la journée a été supprimée : demandez au joueur de jouer la grille de la nouvelle journée.";
+
   // Joueur
   let sectionJoueur = null;
   if (aValider) {
@@ -529,6 +541,12 @@ export function GrilleRecueFiche({ grilleId, dejaRecue = false, onFermer }) {
 
     ${aValider && blocage && html`<${Section}><${Ligne} icone="exclamationmark.triangle.fill" couleurIcone="var(--rouge)"
       classe="rouge gras" titre=${blocage} /><//>`}
+
+    ${aValider && !analyse.journee && html`<${Section} titre="Le concours est-il tenu ailleurs ?" pied=${ailleurs}>
+      <${Ligne} action icone=${grilleCopiee ? 'checkmark' : 'doc.on.doc'} titre=${grilleCopiee ? 'Grille copiée' : 'Copier la grille'}
+        onClick=${copierGrille} />
+      <${Ligne} destructif icone="trash" couleurIcone="var(--rouge)" titre="Supprimer d'ici" onClick=${supprimer} />
+    <//>`}
 
     ${sectionJoueur}
 

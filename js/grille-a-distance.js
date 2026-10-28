@@ -318,7 +318,7 @@ export class Analyse {
   /** Ce qui empêche de valider, dit au barman. */
   get blocage() {
     const journee = this.journee;
-    if (!journee) return "Cette journée n'est plus dans l'app.";
+    if (!journee) return "Cette journée n'est pas dans cette app.";
     if (journee.statut !== 'ouverte') return `Les paris de « ${journee.titre} » sont fermés.`;
     if (this.introuvables > 0) {
       const matchs = this.introuvables > 1
